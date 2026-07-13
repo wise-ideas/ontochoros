@@ -1,0 +1,119 @@
+[[rules]]
+code = "E101"
+file = "test_subclass_nothing.cypher"
+summary = "Named class explicitly asserted under owl:Nothing."
+severity = "error"
+
+[[rules]]
+code = "E102"
+file = "test_class_assertion_nothing.cypher"
+summary = "Individual explicitly asserted as an instance of owl:Nothing."
+severity = "error"
+
+[[rules]]
+code = "E103"
+file = "test_disjoint_classes_shared_subclass.cypher"
+summary = "Named class asserted as a subclass of two disjoint named classes."
+severity = "error"
+
+[[rules]]
+code = "E104"
+file = "test_disjoint_classes_shared_individual.cypher"
+summary = "Named individual asserted into two disjoint named classes."
+severity = "error"
+
+[[rules]]
+code = "E105"
+file = "test_disjoint_equivalent_classes.cypher"
+summary = "Named classes asserted both equivalent and disjoint."
+severity = "error"
+
+[[rules]]
+code = "E106"
+file = "test_same_different_individual.cypher"
+summary = "Individuals asserted both same and different."
+severity = "error"
+
+[[rules]]
+code = "E107"
+file = "test_negative_object_property_assertion_contradiction.cypher"
+summary = "Object property assertion contradicted by an explicit negative assertion."
+severity = "error"
+
+[[rules]]
+code = "E108"
+file = "test_negative_data_property_assertion_contradiction.cypher"
+summary = "Data property assertion contradicted by an explicit negative assertion."
+severity = "error"
+
+[[rules]]
+code = "E109"
+file = "test_property_contradictory_characteristics.cypher"
+summary = "Object property declared with contradictory characteristics."
+severity = "error"
+
+[[rules]]
+code = "E110"
+file = "test_irreflexive_property_self_assertion.cypher"
+summary = "Irreflexive object property asserted from an individual to itself."
+severity = "error"
+
+[[rules]]
+code = "E111"
+file = "test_asymmetric_property_bidirectional_assertion.cypher"
+summary = "Asymmetric object property asserted in both directions or as a self-loop."
+severity = "error"
+
+[[rules]]
+code = "E112"
+file = "test_disjoint_object_properties_shared_assertion.cypher"
+summary = "Same subject-target pair asserted through disjoint object properties."
+severity = "error"
+
+[[rules]]
+code = "E113"
+file = "test_disjoint_data_properties_shared_assertion.cypher"
+summary = "Same subject-literal pair asserted through disjoint data properties."
+severity = "error"
+
+[[rules]]
+code = "E114"
+file = "test_bottom_object_property_assertion.cypher"
+summary = "Assertion uses owl:bottomObjectProperty."
+severity = "error"
+
+[[rules]]
+code = "E115"
+file = "test_bottom_data_property_assertion.cypher"
+summary = "Assertion uses owl:bottomDataProperty."
+severity = "error"
+
+[[rules]]
+code = "W101"
+file = "warn_subclass_reflexive.cypher"
+summary = "Tautological SubClassOf(A, A) axiom."
+severity = "warn"
+
+[[rules]]
+code = "W102"
+file = "warn_duplicate_subclass_axiom.cypher"
+summary = "Duplicate SubClassOf(A, B) axiom."
+severity = "warn"
+
+[[rules]]
+code = "W103"
+file = "warn_redundant_subclass_given_equivalence.cypher"
+summary = "SubClassOf restated even though EquivalentClasses already entails it."
+severity = "warn"
+
+[[rules]]
+code = "W104"
+file = "warn_disjoint_union_subclass_redundant.cypher"
+summary = "SubClassOf restated even though DisjointUnion already entails it."
+severity = "warn"
+
+[[rules]]
+code = "W105"
+file = "warn_functional_property_multiple_values.cypher"
+summary = "Functional object property used with two distinct named targets from the same source."
+severity = "warn"

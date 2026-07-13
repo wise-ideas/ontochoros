@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontopoiesis"
+version = "2026.7.0"
+description = "Operator CLI and workflows for OWL 2 ontology projections"
+readme = "README.md"
+authors = [{ name = "Elliott Wise", email = "ell.wise@gmail.com" }]
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = ["owl", "owl2", "ontology", "cypher", "cli", "lint", "semantic-web"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+dependencies = [
+    "ontoplexis>=2026.7",
+    "jinja2",
+    "pytest>=8,<9",
+    "python-dotenv>=1,<2",
+    "rich>=13,<15",
+    "typer>=0.16,<1",
+]
+
+[project.scripts]
+ontopoiesis = "ontopoiesis.app:app"
+
+[project.urls]
+Homepage = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis"
+Documentation = "https://wise-ideas.github.io/ontotheke/ontopoiesis/"
+Source = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis"
+Issues = "https://github.com/wise-ideas/ontotheke/issues"
+Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontopoiesis"
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "ty",
+    "zensical",
+]
+
+[tool.uv.sources]
+ontoplexis = { workspace = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ontopoiesis*"]
+
+[tool.setuptools.package-data]
+"ontopoiesis" = ["py.typed"]
+"ontopoiesis.lint" = [
+    "lint/*.cypher",
+    "lint/registry.toml",
+    "lint_profiles/*/*.cypher",
+    "lint_profiles/*/registry.toml",
+]
+
+[tool.ty.environment]
+root = [
+    "./src",
+]
+
+[tool.ty.src]
+include = [
+    "src",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=prepend"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I"]

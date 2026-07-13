@@ -1,0 +1,8 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/personAge","kind":"Datatype"}}
+{"uid":"0x2","construct":{"iri":"http://www.w3.org/2001/XMLSchema#integer","kind":"Datatype"}}
+{"uid":"0x3","construct":{"lexical_form":"\"0\"","datatype":{"uid":"0x2"},"kind":"TypedLiteral"}}
+{"uid":"0x4","construct":{"constraining_facet":"http://www.w3.org/2001/XMLSchema#minInclusive","restriction_value":{"uid":"0x3"},"kind":"FacetRestriction"}}
+{"uid":"0x5","construct":{"lexical_form":"\"150\"","datatype":{"uid":"0x2"},"kind":"TypedLiteral"}}
+{"uid":"0x6","construct":{"constraining_facet":"http://www.w3.org/2001/XMLSchema#maxInclusive","restriction_value":{"uid":"0x5"},"kind":"FacetRestriction"}}
+{"uid":"0x7","construct":{"datatype":{"uid":"0x2"},"restrictions":[{"uid":"0x4"},{"uid":"0x6"}],"kind":"DatatypeRestriction"}}
+{"uid":"0x8","construct":{"datatype":{"uid":"0x1"},"data_range":{"uid":"0x7"},"axiom_annotations":[],"kind":"DatatypeDefinition"}}

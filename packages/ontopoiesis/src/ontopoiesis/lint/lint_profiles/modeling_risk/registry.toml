@@ -1,0 +1,53 @@
+[[rules]]
+code = "M101"
+file = "warn_subclass_cycle_direct.cypher"
+summary = "Direct subclass cycle that collapses classes into an equivalence set."
+severity = "warn"
+
+[[rules]]
+code = "M102"
+file = "warn_subclass_cycle_indirect.cypher"
+summary = "Indirect subclass cycle that collapses classes into an equivalence set."
+severity = "warn"
+
+[[rules]]
+code = "M103"
+file = "warn_object_property_no_domain_or_range.cypher"
+summary = "Object property has neither declared domain nor declared range."
+severity = "warn"
+
+[[rules]]
+code = "M104"
+file = "warn_datatype_property_no_domain.cypher"
+summary = "Data property has no declared domain."
+severity = "warn"
+
+[[rules]]
+code = "M105"
+file = "warn_datatype_property_no_range.cypher"
+summary = "Data property has no declared range."
+severity = "warn"
+
+[[rules]]
+code = "M106"
+file = "warn_individual_no_type.cypher"
+summary = "Named individual has no ClassAssertion."
+severity = "warn"
+
+[[rules]]
+code = "M107"
+file = "warn_property_dangerous_combination.cypher"
+summary = "Object property declared with a risky but legal characteristic combination."
+severity = "warn"
+
+[[rules]]
+code = "M108"
+file = "warn_annotation_punning_object_property.cypher"
+summary = "IRI used as both ObjectProperty and AnnotationProperty (annotation punning)."
+severity = "warn"
+
+[[rules]]
+code = "M109"
+file = "warn_annotation_punning_data_property.cypher"
+summary = "IRI used as both DataProperty and AnnotationProperty (annotation punning)."
+severity = "warn"

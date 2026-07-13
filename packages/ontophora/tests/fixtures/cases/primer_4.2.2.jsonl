@@ -1,0 +1,4 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Mother","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Woman","kind":"Class"}}
+{"uid":"0x3","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x4","construct":{"sub_class_expression":{"uid":"0x1"},"super_class_expression":{"uid":"0x2"},"axiom_annotations":[],"kind":"SubClassOf"}}

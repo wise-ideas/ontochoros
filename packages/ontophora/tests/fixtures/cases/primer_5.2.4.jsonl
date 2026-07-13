@@ -1,0 +1,6 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/JohnsChildren","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/hasParent","kind":"ObjectProperty"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x4","construct":{"object_property_expression":{"uid":"0x2"},"individual":{"uid":"0x3"},"kind":"ObjectHasValue"}}
+{"uid":"0x5","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x6","construct":{"class_expressions":[{"uid":"0x1"},{"uid":"0x4"}],"axiom_annotations":[],"kind":"EquivalentClasses"}}

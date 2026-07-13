@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontoplexis"
+version = "2026.7.10"
+description = "Query OWL 2 ontologies with Cypher"
+readme = "README.md"
+authors = [{ name = "Elliott Wise", email = "ell.wise@gmail.com" }]
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = ["owl", "owl2", "ontology", "cypher", "graph", "semantic-web"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pyarrow>=25.0.0",
+    "real_ladybug>=0.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis"
+Documentation = "https://wise-ideas.github.io/ontotheke/ontoplexis/"
+Source = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis"
+Issues = "https://github.com/wise-ideas/ontotheke/issues"
+Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontoplexis"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "ty",
+    "zensical",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ontoplexis*"]
+
+[tool.setuptools.package-data]
+"ontoplexis" = [
+    "py.typed",
+]
+
+[tool.ty.environment]
+root = [
+    "./src",
+]
+
+[tool.ty.src]
+include = [
+    "src",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=prepend"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I"]

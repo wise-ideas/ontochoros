@@ -1,0 +1,50 @@
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY otherOnt "http://example.org/otherOntologies/families/">
+]>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns="http://example.org/"
+         xml:base="http://example.org/">
+  
+            <owl:Class rdf:about="ChildlessPerson">
+                <rdfs:subClassOf>
+                    <owl:Class>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <owl:Class rdf:about="Person"/>
+                            <owl:Class>
+                                <owl:complementOf>
+                                    <owl:Restriction>
+                                        <owl:onProperty>
+                                            <owl:ObjectProperty>
+                                                <owl:inverseOf rdf:resource="hasParent"/>
+                                            </owl:ObjectProperty>
+                                        </owl:onProperty>
+                                        <owl:someValuesFrom rdf:resource="Person"/>
+                                    </owl:Restriction>
+                                </owl:complementOf>
+                            </owl:Class>
+                        </owl:intersectionOf>
+                    </owl:Class>
+                </rdfs:subClassOf>
+            </owl:Class>
+            
+            <owl:AllDisjointClasses>
+                <owl:members rdf:parseType="Collection">
+                    <owl:Class rdf:about="Mother"/>
+                    <owl:Class rdf:about="Father"/>
+                    <owl:Class rdf:about="YoungChild"/>
+                </owl:members>
+            </owl:AllDisjointClasses>
+            
+            <owl:ObjectProperty rdf:about="hasSon">
+                <owl:propertyDisjointWith rdf:resource="hasDaughter"/>
+            </owl:ObjectProperty>
+            
+            <owl:ObjectProperty rdf:about="hasFather">
+                <rdfs:subPropertyOf rdf:resource="hasParent"/>
+            </owl:ObjectProperty>
+        
+</rdf:RDF>

@@ -1,0 +1,5 @@
+{"uid":"0x41","construct":{"kind":"AnnotationProperty","iri":"http://example.org/title"}}
+{"uid":"0x42","construct":{"kind":"Declaration","entity":"0x41"}}
+{"uid":"0x43","construct":{"kind":"StringLiteralWithLanguage","quoted_string":"\"Titre de reference\"","language_tag":"@fr"}}
+{"uid":"0x44","construct":{"kind":"Annotation","annotation_property":"0x41","annotation_value":"0x43","annotation_annotations":[]}}
+{"uid":"0x40","construct":{"kind":"Ontology","ontology_iri":"http://example.org/onto","ontology_annotations":["0x44"],"directly_imports_documents":[],"axioms":[]}}

@@ -1,0 +1,3 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Bill","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"individuals":[{"uid":"0x1"},{"uid":"0x2"}],"axiom_annotations":[],"kind":"DifferentIndividuals"}}

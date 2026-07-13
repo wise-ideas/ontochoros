@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+          xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+          xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+          ontologyIRI="https://example.org/pizza">
+
+    <Declaration><Class IRI="https://example.org/pizza#Pizza"/></Declaration>
+    <Declaration><Class IRI="https://example.org/pizza#Topping"/></Declaration>
+    <Declaration><Class IRI="https://example.org/pizza#MargheritaPizza"/></Declaration>
+    <Declaration><ObjectProperty IRI="https://example.org/pizza#hasTopping"/></Declaration>
+
+    <Declaration><NamedIndividual IRI="https://example.org/pizza#margherita1"/></Declaration>
+    <Declaration><NamedIndividual IRI="https://example.org/pizza#tomatoSauce"/></Declaration>
+    <Declaration><NamedIndividual IRI="https://example.org/pizza#mozzarella"/></Declaration>
+    <Declaration><NamedIndividual IRI="https://example.org/pizza#basil"/></Declaration>
+
+    <SubClassOf>
+        <Class IRI="https://example.org/pizza#MargheritaPizza"/>
+        <Class IRI="https://example.org/pizza#Pizza"/>
+    </SubClassOf>
+
+    <ClassAssertion>
+        <Class IRI="https://example.org/pizza#MargheritaPizza"/>
+        <NamedIndividual IRI="https://example.org/pizza#margherita1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://example.org/pizza#Topping"/>
+        <NamedIndividual IRI="https://example.org/pizza#tomatoSauce"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://example.org/pizza#Topping"/>
+        <NamedIndividual IRI="https://example.org/pizza#mozzarella"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://example.org/pizza#Topping"/>
+        <NamedIndividual IRI="https://example.org/pizza#basil"/>
+    </ClassAssertion>
+
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="https://example.org/pizza#hasTopping"/>
+        <NamedIndividual IRI="https://example.org/pizza#margherita1"/>
+        <NamedIndividual IRI="https://example.org/pizza#tomatoSauce"/>
+    </ObjectPropertyAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="https://example.org/pizza#hasTopping"/>
+        <NamedIndividual IRI="https://example.org/pizza#margherita1"/>
+        <NamedIndividual IRI="https://example.org/pizza#mozzarella"/>
+    </ObjectPropertyAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="https://example.org/pizza#hasTopping"/>
+        <NamedIndividual IRI="https://example.org/pizza#margherita1"/>
+        <NamedIndividual IRI="https://example.org/pizza#basil"/>
+    </ObjectPropertyAssertion>
+
+</Ontology>

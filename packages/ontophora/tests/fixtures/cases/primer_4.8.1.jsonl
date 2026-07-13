@@ -1,0 +1,7 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Person","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/hasAge","kind":"DataProperty"}}
+{"uid":"0x4","construct":{"iri":"http://www.w3.org/2001/XMLSchema#integer","kind":"Datatype"}}
+{"uid":"0x5","construct":{"lexical_form":"\"51\"","datatype":{"uid":"0x4"},"kind":"TypedLiteral"}}
+{"uid":"0x6","construct":{"class_expression":{"uid":"0x1"},"individual":{"uid":"0x2"},"axiom_annotations":[],"kind":"ClassAssertion"}}
+{"uid":"0x7","construct":{"data_property_expression":{"uid":"0x3"},"source_individual":{"uid":"0x2"},"target_value":{"uid":"0x5"},"axiom_annotations":[],"kind":"DataPropertyAssertion"}}

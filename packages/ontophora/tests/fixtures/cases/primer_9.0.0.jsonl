@@ -1,0 +1,6 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/SocialRole","kind":"Class"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/Father","kind":"Class"}}
+{"uid":"0x4","construct":{"iri":"http://example.org/Father","kind":"NamedIndividual"}}
+{"uid":"0x5","construct":{"class_expression":{"uid":"0x3"},"individual":{"uid":"0x1"},"axiom_annotations":[],"kind":"ClassAssertion"}}
+{"uid":"0x6","construct":{"class_expression":{"uid":"0x2"},"individual":{"uid":"0x4"},"axiom_annotations":[],"kind":"ClassAssertion"}}

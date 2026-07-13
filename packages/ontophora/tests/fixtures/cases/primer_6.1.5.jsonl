@@ -1,0 +1,3 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasParent","kind":"ObjectProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/hasSpouse","kind":"ObjectProperty"}}
+{"uid":"0x3","construct":{"object_property_expressions":[{"uid":"0x1"},{"uid":"0x2"}],"axiom_annotations":[],"kind":"DisjointObjectProperties"}}

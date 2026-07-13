@@ -1,0 +1,47 @@
+[[rules]]
+code = "P101"
+file = "warn_missing_label.cypher"
+summary = "Named entity missing an rdfs:label."
+severity = "warn"
+
+[[rules]]
+code = "P102"
+file = "warn_duplicate_label_language.cypher"
+summary = "Multiple rdfs:label annotations in the same language bucket."
+severity = "warn"
+
+[[rules]]
+code = "P103"
+file = "warn_labeled_without_definition.cypher"
+summary = "Named entity has a label but no recognized definition annotation."
+severity = "warn"
+
+[[rules]]
+code = "P104"
+file = "warn_annotation_assertion_unknown_subject.cypher"
+summary = "Annotation assertion subject does not appear elsewhere in the ontology graph."
+severity = "warn"
+
+[[rules]]
+code = "P105"
+file = "warn_deprecated_entity_referenced.cypher"
+summary = "Deprecated entity is still referenced by active axioms."
+severity = "warn"
+
+[[rules]]
+code = "P106"
+file = "warn_entity_iri_equals_ontology_iri.cypher"
+summary = "Entity IRI is identical to the ontology IRI."
+severity = "warn"
+
+[[rules]]
+code = "P107"
+file = "warn_version_iri_missing.cypher"
+summary = "Ontology IRI has no version IRI."
+severity = "warn"
+
+[[rules]]
+code = "P108"
+file = "warn_ontology_no_metadata_annotations.cypher"
+summary = "Ontology lacks common title/creator/description/license metadata annotations."
+severity = "warn"

@@ -1,0 +1,5 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasAge","kind":"DataProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Jack","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"iri":"http://www.w3.org/2001/XMLSchema#integer","kind":"Datatype"}}
+{"uid":"0x4","construct":{"lexical_form":"\"53\"","datatype":{"uid":"0x3"},"kind":"TypedLiteral"}}
+{"uid":"0x5","construct":{"data_property_expression":{"uid":"0x1"},"source_individual":{"uid":"0x2"},"target_value":{"uid":"0x4"},"axiom_annotations":[],"kind":"NegativeDataPropertyAssertion"}}

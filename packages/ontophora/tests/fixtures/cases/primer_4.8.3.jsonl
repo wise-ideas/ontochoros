@@ -1,0 +1,6 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasAge","kind":"DataProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Person","kind":"Class"}}
+{"uid":"0x3","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x4","construct":{"data_property_expression":{"uid":"0x1"},"domain":{"uid":"0x2"},"axiom_annotations":[],"kind":"DataPropertyDomain"}}
+{"uid":"0x5","construct":{"iri":"http://www.w3.org/2001/XMLSchema#nonNegativeInteger","kind":"Datatype"}}
+{"uid":"0x6","construct":{"data_property_expression":{"uid":"0x1"},"range":{"uid":"0x5"},"axiom_annotations":[],"kind":"DataPropertyRange"}}

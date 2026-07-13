@@ -1,0 +1,8 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Grandfather","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Man","kind":"Class"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/Parent","kind":"Class"}}
+{"uid":"0x4","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x5","construct":{"entity":{"uid":"0x2"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x6","construct":{"entity":{"uid":"0x3"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x7","construct":{"class_expressions":[{"uid":"0x2"},{"uid":"0x3"}],"kind":"ObjectIntersectionOf"}}
+{"uid":"0x8","construct":{"sub_class_expression":{"uid":"0x1"},"super_class_expression":{"uid":"0x7"},"axiom_annotations":[],"kind":"SubClassOf"}}

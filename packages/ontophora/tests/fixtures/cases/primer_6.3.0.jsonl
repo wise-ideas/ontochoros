@@ -1,0 +1,5 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Person","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/hasSSN","kind":"DataProperty"}}
+{"uid":"0x3","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x4","construct":{"entity":{"uid":"0x2"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x5","construct":{"class_expression":{"uid":"0x1"},"object_property_expressions":[],"data_property_expressions":[{"uid":"0x2"}],"axiom_annotations":[],"kind":"HasKey"}}

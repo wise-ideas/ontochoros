@@ -1,0 +1,4 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasWife","kind":"ObjectProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Bill","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/Mary","kind":"NamedIndividual"}}
+{"uid":"0x4","construct":{"object_property_expression":{"uid":"0x1"},"source_individual":{"uid":"0x2"},"target_individual":{"uid":"0x3"},"axiom_annotations":[],"kind":"NegativeObjectPropertyAssertion"}}

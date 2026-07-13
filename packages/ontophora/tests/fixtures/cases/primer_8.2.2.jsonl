@@ -1,0 +1,5 @@
+{"uid":"0x1","construct":{"prefix_name":":","full_iri":"http://example.com/owl/families/","kind":"Prefix"}}
+{"uid":"0x2","construct":{"prefix_name":"otherOnt:","full_iri":"http://example.org/otherOntologies/families/","kind":"Prefix"}}
+{"uid":"0x3","construct":{"prefix_name":"xsd:","full_iri":"http://www.w3.org/2001/XMLSchema#","kind":"Prefix"}}
+{"uid":"0x4","construct":{"prefix_name":"owl:","full_iri":"http://www.w3.org/2002/07/owl#","kind":"Prefix"}}
+{"uid":"0x5","construct":{"ontology_iri":"http://example.com/owl/families","version_iri":null,"directly_imports_documents":[],"ontology_annotations":[],"axioms":[],"kind":"Ontology"}}

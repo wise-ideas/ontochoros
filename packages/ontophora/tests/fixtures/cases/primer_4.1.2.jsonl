@@ -1,0 +1,3 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Woman","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Mary","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"class_expression":{"uid":"0x1"},"individual":{"uid":"0x2"},"axiom_annotations":[],"kind":"ClassAssertion"}}

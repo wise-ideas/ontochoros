@@ -1,0 +1,32 @@
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY otherOnt "http://example.org/otherOntologies/families/">
+]>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns="http://example.org/"
+         xml:base="http://example.org/">
+  
+            <rdf:Description rdf:about="John">
+                <owl:sameAs rdf:resource="&otherOnt;JohnBrown"/>
+            </rdf:Description>
+
+            <rdf:Description rdf:about="Mary">
+                <owl:sameAs rdf:resource="&otherOnt;MaryBrown"/>
+            </rdf:Description>
+
+            <owl:Class rdf:about="Adult">
+                <owl:equivalentClass rdf:resource="&otherOnt;Grownup"/>
+            </owl:Class>
+
+            <owl:ObjectProperty rdf:about="hasChild">
+                <owl:equivalentProperty rdf:resource="&otherOnt;child"/>
+            </owl:ObjectProperty>
+
+            <owl:DatatypeProperty rdf:about="hasAge">
+                <owl:equivalentProperty rdf:resource="&otherOnt;age"/>
+            </owl:DatatypeProperty>
+        
+</rdf:RDF>

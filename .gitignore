@@ -1,0 +1,35 @@
+.cache/
+.coverage
+.DS_Store
+.hypothesis/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+htmlcov/
+site/
+.quarto/
+_site/
+_freeze/
+site_libs/
+
+# Ladybug graph databases are build artifacts (regenerate with `ontopoiesis build`).
+*.lbug
+
+# Large example ontologies — too big to track; fetch from their upstreams as needed.
+# Small example sources (foaf, dublincore, sweetAll, goslim_generic, SCTO, schemaorg)
+# stay tracked as runnable examples.
+packages/ontopoiesis/examples/chebi.owl
+packages/ontopoiesis/examples/fma.owl
+packages/ontopoiesis/examples/go.owl
+packages/ontopoiesis/examples/go-2026-01-23.owl
+packages/ontopoiesis/examples/uberon.owl
+packages/ontopoiesis/examples/hp.owl
+
+# Agent/contributor working notes — not part of the published sources.
+AGENTS.md
+CLAUDE.md
+TODO.md

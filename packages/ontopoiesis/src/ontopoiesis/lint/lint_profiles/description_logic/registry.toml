@@ -1,0 +1,24 @@
+[[rules]]
+code = "D101"
+file = "test_undeclared_entities.cypher"
+summary = "Entity used without a Declaration axiom."
+severity = "error"
+
+[[rules]]
+code = "D102"
+file = "test_punning_class_individual.cypher"
+summary = "IRI reused as both Class and NamedIndividual."
+severity = "error"
+
+[[rules]]
+code = "D103"
+file = "test_punning_class_datatype.cypher"
+summary = "IRI reused as both Class and Datatype."
+severity = "error"
+
+[[rules]]
+code = "D104"
+file = "test_punning_object_data_property.cypher"
+summary = "IRI reused as both ObjectProperty and DataProperty."
+severity = "error"
+

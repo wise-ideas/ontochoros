@@ -1,0 +1,5 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Person","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://www.w3.org/2000/01/rdf-schema#comment","kind":"AnnotationProperty"}}
+{"uid":"0x3","construct":{"quoted_string":"\"Represents the set of all people.\"","kind":"StringLiteralNoLanguage"}}
+{"uid":"0x4","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x5","construct":{"annotation_property":{"uid":"0x2"},"annotation_subject":"http://example.org/Person","annotation_value":"0x3","axiom_annotations":[],"kind":"AnnotationAssertion"}}

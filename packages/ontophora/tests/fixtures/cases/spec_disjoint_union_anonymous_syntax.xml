@@ -1,0 +1,17 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#">
+  <owl:Class rdf:about="http://example.org/Mother"/>
+  <owl:Class rdf:about="http://example.org/Father"/>
+  <owl:DatatypeProperty rdf:about="http://example.org/hasZIP"/>
+  <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+  <owl:Class rdf:about="http://example.org/Parent">
+    <owl:disjointUnionOf rdf:parseType="Collection">
+      <owl:Class rdf:about="http://example.org/Mother"/>
+      <owl:Class rdf:about="http://example.org/Father"/>
+    </owl:disjointUnionOf>
+  </owl:Class>
+  <rdf:Description rdf:nodeID="a1">
+    <ns1:hasZIP xmlns:ns1="http://example.org/" rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">02903</ns1:hasZIP>
+  </rdf:Description>
+</rdf:RDF>

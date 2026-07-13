@@ -1,0 +1,11 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/Teenager","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/hasAge","kind":"DataProperty"}}
+{"uid":"0x3","construct":{"iri":"http://www.w3.org/2001/XMLSchema#integer","kind":"Datatype"}}
+{"uid":"0x4","construct":{"lexical_form":"\"12\"","datatype":{"uid":"0x3"},"kind":"TypedLiteral"}}
+{"uid":"0x5","construct":{"constraining_facet":"http://www.w3.org/2001/XMLSchema#minExclusive","restriction_value":{"uid":"0x4"},"kind":"FacetRestriction"}}
+{"uid":"0x6","construct":{"lexical_form":"\"19\"","datatype":{"uid":"0x3"},"kind":"TypedLiteral"}}
+{"uid":"0x7","construct":{"constraining_facet":"http://www.w3.org/2001/XMLSchema#maxInclusive","restriction_value":{"uid":"0x6"},"kind":"FacetRestriction"}}
+{"uid":"0x8","construct":{"datatype":{"uid":"0x3"},"restrictions":[{"uid":"0x5"},{"uid":"0x7"}],"kind":"DatatypeRestriction"}}
+{"uid":"0x9","construct":{"data_range":{"uid":"0x8"},"data_property_expression":{"uid":"0x2"},"kind":"DataSomeValuesFrom"}}
+{"uid":"0xa","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0xb","construct":{"sub_class_expression":{"uid":"0x1"},"super_class_expression":{"uid":"0x9"},"axiom_annotations":[],"kind":"SubClassOf"}}

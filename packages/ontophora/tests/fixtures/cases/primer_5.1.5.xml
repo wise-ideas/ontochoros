@@ -1,0 +1,25 @@
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY otherOnt "http://example.org/otherOntologies/families/">
+]>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns="http://example.org/"
+         xml:base="http://example.org/">
+  
+            <rdf:Description rdf:about="Jack">
+            <rdf:type>
+                <owl:Class>
+                <owl:intersectionOf  rdf:parseType="Collection">
+                    <owl:Class rdf:about="Person"/>
+                    <owl:Class>
+                    <owl:complementOf rdf:resource="Parent"/>
+                    </owl:Class>
+                </owl:intersectionOf>
+                </owl:Class>
+            </rdf:type>
+            </rdf:Description>
+        
+</rdf:RDF>

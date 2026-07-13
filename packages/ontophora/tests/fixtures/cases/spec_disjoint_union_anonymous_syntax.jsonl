@@ -1,0 +1,14 @@
+{"uid":"0x30","construct":{"kind":"Class","iri":"http://example.org/Parent"}}
+{"uid":"0x31","construct":{"kind":"Class","iri":"http://example.org/Mother"}}
+{"uid":"0x32","construct":{"kind":"Class","iri":"http://example.org/Father"}}
+{"uid":"0x33","construct":{"kind":"Declaration","entity":"0x30"}}
+{"uid":"0x34","construct":{"kind":"Declaration","entity":"0x31"}}
+{"uid":"0x35","construct":{"kind":"Declaration","entity":"0x32"}}
+{"uid":"0x36","construct":{"kind":"DisjointUnion","klass":"0x30","disjoint_class_expressions":["0x31","0x32"],"axiom_annotations":[]}}
+{"uid":"0x37","construct":{"kind":"DataProperty","iri":"http://example.org/hasZIP"}}
+{"uid":"0x38","construct":{"kind":"Declaration","entity":"0x37"}}
+{"uid":"0x39","construct":{"kind":"Datatype","iri":"http://www.w3.org/2001/XMLSchema#integer"}}
+{"uid":"0x3A","construct":{"kind":"Declaration","entity":"0x39"}}
+{"uid":"0x3B","construct":{"kind":"AnonymousIndividual","node_id":"_:a1"}}
+{"uid":"0x3C","construct":{"kind":"TypedLiteral","lexical_form":"\"02903\"","datatype":"0x39"}}
+{"uid":"0x3D","construct":{"kind":"DataPropertyAssertion","data_property_expression":"0x37","source_individual":"0x3B","target_value":"0x3C","axiom_annotations":[]}}

@@ -1,0 +1,6 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/toddlerAge","kind":"Datatype"}}
+{"uid":"0x2","construct":{"iri":"http://www.w3.org/2001/XMLSchema#integer","kind":"Datatype"}}
+{"uid":"0x3","construct":{"lexical_form":"\"1\"","datatype":{"uid":"0x2"},"kind":"TypedLiteral"}}
+{"uid":"0x4","construct":{"lexical_form":"\"2\"","datatype":{"uid":"0x2"},"kind":"TypedLiteral"}}
+{"uid":"0x5","construct":{"literals":[{"uid":"0x3"},{"uid":"0x4"}],"kind":"DataOneOf"}}
+{"uid":"0x6","construct":{"datatype":{"uid":"0x1"},"data_range":{"uid":"0x5"},"axiom_annotations":[],"kind":"DatatypeDefinition"}}

@@ -1,0 +1,8 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xmlns:ns1="http://example.org/">
+  <owl:AnnotationProperty rdf:about="http://example.org/title"/>
+  <owl:Ontology rdf:about="http://example.org/onto">
+    <ns1:title xml:lang="fr">Titre de reference</ns1:title>
+  </owl:Ontology>
+</rdf:RDF>

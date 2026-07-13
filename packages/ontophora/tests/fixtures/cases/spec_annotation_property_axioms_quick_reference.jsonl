@@ -1,0 +1,7 @@
+{"uid":"0x1","construct":{"kind":"AnnotationProperty","iri":"http://example.org/label"}}
+{"uid":"0x2","construct":{"kind":"AnnotationProperty","iri":"http://example.org/comment"}}
+{"uid":"0x3","construct":{"kind":"Declaration","entity":"0x1"}}
+{"uid":"0x4","construct":{"kind":"Declaration","entity":"0x2"}}
+{"uid":"0x5","construct":{"kind":"SubAnnotationPropertyOf","sub_annotation_property":"0x1","super_annotation_property":"0x2","axiom_annotations":[]}}
+{"uid":"0x6","construct":{"kind":"AnnotationPropertyDomain","annotation_property":"0x1","domain":"http://example.org/Person","axiom_annotations":[]}}
+{"uid":"0x7","construct":{"kind":"AnnotationPropertyRange","annotation_property":"0x1","range":"http://example.org/vocab#labelTarget","axiom_annotations":[]}}

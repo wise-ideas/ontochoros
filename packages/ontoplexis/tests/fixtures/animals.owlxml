@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://example.org/animals">
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration><Class IRI="http://example.org/animals#Animal"/></Declaration>
+    <Declaration><Class IRI="http://example.org/animals#Pet"/></Declaration>
+    <Declaration><Class IRI="http://example.org/animals#Dog"/></Declaration>
+    <Declaration><ObjectProperty IRI="http://example.org/animals#hasOwner"/></Declaration>
+    <Declaration><NamedIndividual IRI="http://example.org/animals#Rex"/></Declaration>
+    <SubClassOf>
+        <Class IRI="http://example.org/animals#Pet"/>
+        <Class IRI="http://example.org/animals#Animal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Annotation>
+            <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+            <Literal xml:lang="en">dogs are pets</Literal>
+        </Annotation>
+        <Class IRI="http://example.org/animals#Dog"/>
+        <Class IRI="http://example.org/animals#Pet"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://example.org/animals#Dog"/>
+        <ObjectMinCardinality cardinality="1">
+            <ObjectProperty IRI="http://example.org/animals#hasOwner"/>
+        </ObjectMinCardinality>
+    </SubClassOf>
+    <ClassAssertion>
+        <Class IRI="http://example.org/animals#Dog"/>
+        <NamedIndividual IRI="http://example.org/animals#Rex"/>
+    </ClassAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://example.org/animals#Animal</IRI>
+        <Literal xml:lang="en">Animal</Literal>
+    </AnnotationAssertion>
+</Ontology>

@@ -1,0 +1,6 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/minorAge","kind":"Datatype"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/personAge","kind":"Datatype"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/majorAge","kind":"Datatype"}}
+{"uid":"0x4","construct":{"data_range":{"uid":"0x1"},"kind":"DataComplementOf"}}
+{"uid":"0x5","construct":{"data_ranges":[{"uid":"0x2"},{"uid":"0x4"}],"kind":"DataIntersectionOf"}}
+{"uid":"0x6","construct":{"datatype":{"uid":"0x3"},"data_range":{"uid":"0x5"},"axiom_annotations":[],"kind":"DatatypeDefinition"}}

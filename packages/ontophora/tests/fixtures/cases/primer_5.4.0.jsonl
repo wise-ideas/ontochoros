@@ -1,0 +1,7 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/MyBirthdayGuests","kind":"Class"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/Bill","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x4","construct":{"iri":"http://example.org/Mary","kind":"NamedIndividual"}}
+{"uid":"0x5","construct":{"individuals":[{"uid":"0x2"},{"uid":"0x3"},{"uid":"0x4"}],"kind":"ObjectOneOf"}}
+{"uid":"0x6","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x7","construct":{"class_expressions":[{"uid":"0x1"},{"uid":"0x5"}],"axiom_annotations":[],"kind":"EquivalentClasses"}}

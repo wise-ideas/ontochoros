@@ -1,0 +1,61 @@
+<!DOCTYPE rdf:RDF [
+    <!ENTITY otherOnt "http://example.org/otherOntologies/families/">
+]>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns="http://example.org/"
+         xml:base="http://example.org/">
+  
+            <owl:Class rdf:about="Father">
+                <rdfs:subClassOf>
+                    <owl:Class>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <owl:Class rdf:about="Man"/>
+                            <owl:Class rdf:about="Parent"/>
+                        </owl:intersectionOf>
+                    </owl:Class>
+                </rdfs:subClassOf>
+            </owl:Class>
+            
+            <owl:Class rdf:about="Parent">
+                <owl:equivalentClass>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="hasChild"/>
+                        <owl:someValuesFrom rdf:resource="Person"/>
+                    </owl:Restriction>
+                </owl:equivalentClass>
+            </owl:Class>
+            
+            <owl:Class rdf:about="NarcisticPerson">
+                <owl:equivalentClass>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="loves"/>
+                        <owl:hasSelf rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:hasSelf>
+                    </owl:Restriction>
+                </owl:equivalentClass>
+            </owl:Class>
+            
+            <owl:AllDisjointClasses>
+                <owl:members rdf:parseType="Collection">
+                        <owl:Class rdf:about="Mother"/>
+                        <owl:Class rdf:about="Father"/>
+                    <owl:Class rdf:about="YoungChild"/>
+                </owl:members>
+            </owl:AllDisjointClasses>
+
+            <rdf:Description rdf:about="hasUncle">
+                <owl:propertyChainAxiom rdf:parseType="Collection">
+                    <owl:ObjectProperty rdf:about="hasFather"/>
+                    <owl:ObjectProperty rdf:about="hasBrother"/>
+                </owl:propertyChainAxiom>
+            </rdf:Description>
+            
+            <owl:NegativePropertyAssertion>
+                <owl:sourceIndividual rdf:resource="Bill"/>
+                <owl:assertionProperty rdf:resource="hasDaughter"/>
+                <owl:targetIndividual rdf:resource="Susan"/>
+            </owl:NegativePropertyAssertion>
+        
+</rdf:RDF>

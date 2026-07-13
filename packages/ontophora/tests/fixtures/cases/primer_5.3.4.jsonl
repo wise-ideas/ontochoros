@@ -1,0 +1,4 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasChild","kind":"ObjectProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/John","kind":"NamedIndividual"}}
+{"uid":"0x3","construct":{"cardinality":5,"object_property_expression":{"uid":"0x1"},"class_expression":null,"kind":"ObjectExactCardinality"}}
+{"uid":"0x4","construct":{"class_expression":{"uid":"0x3"},"individual":{"uid":"0x2"},"axiom_annotations":[],"kind":"ClassAssertion"}}

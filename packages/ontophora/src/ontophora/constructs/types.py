@@ -1,0 +1,100 @@
+# ruff: noqa: F401
+import re
+from typing import Annotated, TypeAlias
+
+from language_tags import tags
+from pydantic import AfterValidator, NonNegativeInt, StringConstraints
+
+from ontophora.constructs.iri import IRI, AbbreviatedIRI, FullIRI
+from ontophora.uid import UID
+
+# Character classes transcribed from the SPARQL 1.1 grammar
+# (https://www.w3.org/TR/sparql11-query/#rPN_CHARS_BASE), which OWL 2
+# Structural Specification section 2.1 references for nodeID and prefix names.
+_PN_CHARS_BASE = "A-Za-zÀ-ÖØ-öø-˿Ͱ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿯、-퟿豈-﷏ﷰ-�\U00010000-\U000effff"
+_PN_CHARS_U = _PN_CHARS_BASE + "_"
+_PN_CHARS = _PN_CHARS_U + "\\-0-9·̀-ͯ‿-⁀"
+_PN_PREFIX = rf"[{_PN_CHARS_BASE}](?:[{_PN_CHARS}.]*[{_PN_CHARS}])?"
+_BLANK_NODE_LABEL = rf"_:[{_PN_CHARS_U}0-9](?:[{_PN_CHARS}.]*[{_PN_CHARS}])?"
+
+
+def _strip_leading_at(value: str) -> str:
+    return value[1:]
+
+
+def _validate_bcp47_tag(value: str) -> str:
+    if not tags.check(value):
+        raise ValueError(f"Invalid BCP 47 language tag: @{value}")
+    return value
+
+
+def _restore_leading_at(value: str) -> str:
+    return f"@{value}"
+
+
+LanguageTag = Annotated[
+    str,
+    StringConstraints(pattern=r"^@.*$"),
+    AfterValidator(_strip_leading_at),
+    AfterValidator(_validate_bcp47_tag),
+    AfterValidator(_restore_leading_at),
+]
+
+_BLANK_NODE_LABEL_RE = re.compile(_BLANK_NODE_LABEL)
+
+
+def _validate_node_id(value: str) -> str:
+    if _BLANK_NODE_LABEL_RE.fullmatch(value) is None:
+        raise ValueError(f"Invalid node ID: {value}")
+    return value
+
+
+NodeID = Annotated[
+    str,
+    AfterValidator(_validate_node_id),
+]
+
+NonNegativeInteger: TypeAlias = NonNegativeInt
+
+_PREFIX_NAME_RE = re.compile(rf"(?:{_PN_PREFIX})?:")
+
+
+def _validate_prefix_name(value: str) -> str:
+    if _PREFIX_NAME_RE.fullmatch(value) is None:
+        raise ValueError(f"Invalid prefix name: {value}")
+    return value
+
+
+PrefixName = Annotated[
+    str,
+    AfterValidator(_validate_prefix_name),
+]
+
+_QUOTED_STRING_PATTERN = re.compile(
+    r"""
+        ^"
+        (?:
+        [^"\\]
+        | \\\"
+        | \\\\
+        )*
+        "$
+    """,
+    re.X,
+)
+QuotedString = Annotated[
+    str,
+    StringConstraints(pattern=_QUOTED_STRING_PATTERN),
+]
+
+__all__ = [
+    "AbbreviatedIRI",
+    "FullIRI",
+    "IRI",
+    "LanguageTag",
+    "NodeID",
+    "NonNegativeInteger",
+    "PrefixName",
+    "QuotedString",
+    "UID",
+]

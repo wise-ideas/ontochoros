@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://example.org/complex">
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Declaration><Class IRI="http://example.org/complex#Pizza"/></Declaration>
+    <Declaration><Class IRI="http://example.org/complex#Topping"/></Declaration>
+    <Declaration><Class IRI="http://example.org/complex#Spicy"/></Declaration>
+    <Declaration><ObjectProperty IRI="http://example.org/complex#hasTopping"/></Declaration>
+    <Declaration><ObjectProperty IRI="http://example.org/complex#hasPart"/></Declaration>
+    <Declaration><ObjectProperty IRI="http://example.org/complex#partOf"/></Declaration>
+    <Declaration><DataProperty IRI="http://example.org/complex#calories"/></Declaration>
+    <Declaration><NamedIndividual IRI="http://example.org/complex#Margherita"/></Declaration>
+    <EquivalentClasses>
+        <Class IRI="http://example.org/complex#Spicy"/>
+        <ObjectIntersectionOf>
+            <Class IRI="http://example.org/complex#Pizza"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="http://example.org/complex#hasTopping"/>
+                <ObjectUnionOf>
+                    <Class IRI="http://example.org/complex#Topping"/>
+                    <ObjectOneOf>
+                        <NamedIndividual IRI="http://example.org/complex#Margherita"/>
+                    </ObjectOneOf>
+                </ObjectUnionOf>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <SubClassOf>
+        <Class IRI="http://example.org/complex#Pizza"/>
+        <DataSomeValuesFrom>
+            <DataProperty IRI="http://example.org/complex#calories"/>
+            <DatatypeRestriction>
+                <Datatype abbreviatedIRI="xsd:integer"/>
+                <FacetRestriction facet="http://www.w3.org/2001/XMLSchema#minInclusive">
+                    <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">100</Literal>
+                </FacetRestriction>
+            </DatatypeRestriction>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="http://example.org/complex#hasPart"/>
+            <ObjectProperty IRI="http://example.org/complex#hasPart"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="http://example.org/complex#hasPart"/>
+    </SubObjectPropertyOf>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="http://example.org/complex#hasPart"/>
+        <ObjectProperty IRI="http://example.org/complex#partOf"/>
+    </InverseObjectProperties>
+    <HasKey>
+        <Class IRI="http://example.org/complex#Pizza"/>
+        <ObjectProperty IRI="http://example.org/complex#hasTopping"/>
+    </HasKey>
+    <ClassAssertion>
+        <ObjectComplementOf>
+            <Class IRI="http://example.org/complex#Topping"/>
+        </ObjectComplementOf>
+        <AnonymousIndividual nodeID="_:genid1"/>
+    </ClassAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="http://example.org/complex#hasPart"/>
+        <NamedIndividual IRI="http://example.org/complex#Margherita"/>
+        <AnonymousIndividual nodeID="_:genid1"/>
+    </ObjectPropertyAssertion>
+    <DataPropertyAssertion>
+        <DataProperty IRI="http://example.org/complex#calories"/>
+        <NamedIndividual IRI="http://example.org/complex#Margherita"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">850</Literal>
+    </DataPropertyAssertion>
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://example.org/complex#source"/>
+            <Literal>menu</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://example.org/complex#note"/>
+        <IRI>http://example.org/complex#Pizza</IRI>
+        <Literal xml:lang="it">pizza</Literal>
+    </AnnotationAssertion>
+</Ontology>

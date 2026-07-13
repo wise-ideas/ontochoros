@@ -1,0 +1,71 @@
+name: Release package
+
+on:
+  push:
+    tags:
+      - "ontophora-v*"
+      - "ontoplexis-v*"
+      - "ontopoiesis-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.release.outputs.package }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/cache@v4
+        with:
+          path: packages/ontoplexis/.cache/robot
+          key: robot-1.9.10
+      - id: release
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          case "$TAG" in
+            ontophora-v*) package=ontophora ;;
+            ontoplexis-v*) package=ontoplexis ;;
+            ontopoiesis-v*) package=ontopoiesis ;;
+            *) echo "Release tags must use <package>-v<semver>." >&2; exit 1 ;;
+          esac
+          version="${TAG#"$package"-v}"
+          actual="$(uv version --package "$package" --short)"
+          test "$version" = "$actual"
+          printf 'package=%s\n' "$package" >> "$GITHUB_OUTPUT"
+      - run: make sync
+      - run: make check-${{ steps.release.outputs.package }}
+      - run: uv build --package "${{ steps.release.outputs.package }}" --out-dir dist --clear
+      - run: uvx twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.release.outputs.package }}-dist
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ needs.build.outputs.package }}
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.package }}-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

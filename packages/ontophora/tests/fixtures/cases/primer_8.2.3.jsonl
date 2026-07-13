@@ -1,0 +1,2 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/otherOntologies/families.owl","kind":"Import"}}
+{"uid":"0x2","construct":{"ontology_iri":"http://example.com/owl/families","version_iri":null,"directly_imports_documents":[{"uid":"0x1"}],"ontology_annotations":[],"axioms":[],"kind":"Ontology"}}

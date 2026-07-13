@@ -1,0 +1,2 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasAge","kind":"DataProperty"}}
+{"uid":"0x2","construct":{"data_property_expression":{"uid":"0x1"},"axiom_annotations":[],"kind":"FunctionalDataProperty"}}

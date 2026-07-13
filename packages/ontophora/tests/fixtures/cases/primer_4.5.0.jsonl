@@ -1,0 +1,4 @@
+{"uid":"0x1","construct":{"iri":"http://example.org/hasWife","kind":"ObjectProperty"}}
+{"uid":"0x2","construct":{"iri":"http://example.org/hasSpouse","kind":"ObjectProperty"}}
+{"uid":"0x3","construct":{"entity":{"uid":"0x1"},"axiom_annotations":[],"kind":"Declaration"}}
+{"uid":"0x4","construct":{"sub_object_property_expression":{"uid":"0x1"},"super_object_property_expression":{"uid":"0x2"},"kind":"SubObjectPropertyOf"}}

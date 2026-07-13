@@ -1,0 +1,5 @@
+{"uid":"0x27","construct":{"kind":"Datatype","iri":"http://www.w3.org/2001/XMLSchema#string"}}
+{"uid":"0x28","construct":{"kind":"DataProperty","iri":"http://example.org/hasGivenName"}}
+{"uid":"0x2A","construct":{"kind":"Declaration","entity":"0x27"}}
+{"uid":"0x2B","construct":{"kind":"Declaration","entity":"0x28"}}
+{"uid":"0x2D","construct":{"kind":"DataSomeValuesFrom","data_property_expression":"0x28","data_range":"0x27"}}

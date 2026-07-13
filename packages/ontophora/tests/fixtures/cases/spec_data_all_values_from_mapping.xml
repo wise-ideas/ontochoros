@@ -1,0 +1,15 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#">
+  <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#string"/>
+  <owl:DatatypeProperty rdf:about="http://example.org/hasGivenName"/>
+  <owl:DatatypeProperty rdf:about="http://example.org/hasFamilyName"/>
+  <rdf:Description>
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Restriction"/>
+    <owl:onProperties rdf:parseType="Collection">
+      <owl:DatatypeProperty rdf:about="http://example.org/hasGivenName"/>
+      <owl:DatatypeProperty rdf:about="http://example.org/hasFamilyName"/>
+    </owl:onProperties>
+    <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </rdf:Description>
+</rdf:RDF>
