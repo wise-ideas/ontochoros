@@ -66,4 +66,4 @@ conversion, and development setup.
 
 ## License
 
-Ontoplexis is licensed under the [Apache License 2.0](LICENSE).
+Ontoplexis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontoplexis/LICENSE).

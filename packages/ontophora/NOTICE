@@ -5,8 +5,9 @@ This product includes software developed as part of the Ontophora project.
 
 ---
 
-The test suite (tests/fixtures/) contains material copied from or derived
-from W3C OWL 2 documentation and W3C OWL 2 test materials:
+The test suite (tests/fixtures/ in the source repository) contains material
+copied from or derived from W3C OWL 2 documentation and W3C OWL 2 test
+materials:
 
 - OWL 2 Web Ontology Language Primer (Second Edition)
   https://www.w3.org/TR/owl2-primer/
@@ -24,6 +25,8 @@ Copyright © W3C® (MIT, ERCIM, Keio, Beihang). These materials are used
 under the W3C Software and Document License:
 https://www.w3.org/copyright/software-license/
 
-See tests/fixtures/README.md for the mapping between fixture case IDs and
-their source documents. These materials are used only in the test suite and
-are not included in distributed wheels.
+See tests/fixtures/README.md in the source repository
+(https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora) for
+the mapping between fixture case IDs and their source documents. These
+materials are used only in the test suite and are not included in
+distributed artifacts (wheels or sdists).

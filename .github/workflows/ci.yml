@@ -33,3 +33,20 @@ jobs:
           key: robot-1.9.10
       - run: make sync
       - run: make check
+
+  docs:
+    # Pushes to main build (and deploy) docs via the Documentation workflow;
+    # this job only validates docs on pull requests.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: make sync
+      - run: make docs

@@ -59,4 +59,4 @@ tutorial, JSON package guidance, the model rationale, and the API reference.
 
 ## License
 
-Ontophora is licensed under the [Apache License 2.0](LICENSE).
+Ontophora is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontophora/LICENSE).

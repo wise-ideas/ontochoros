@@ -40,7 +40,7 @@ jobs:
             ontophora-v*) package=ontophora ;;
             ontoplexis-v*) package=ontoplexis ;;
             ontopoiesis-v*) package=ontopoiesis ;;
-            *) echo "Release tags must use <package>-v<semver>." >&2; exit 1 ;;
+            *) echo "Release tags must use <package>-v<version>." >&2; exit 1 ;;
           esac
           version="${TAG#"$package"-v}"
           actual="$(uv version --package "$package" --short)"
@@ -69,3 +69,23 @@ jobs:
           name: ${{ needs.build.outputs.package }}-dist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.package }}-dist
+          path: dist
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --verify-tag \
+            --generate-notes

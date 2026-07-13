@@ -39,9 +39,9 @@ ontopoiesis export pizza.lbug
 
 ## Documentation
 
-Read the [documentation](docs/) for installation, the quickstart, command
-guides, and CLI reference.
+Read the [documentation](https://wise-ideas.github.io/ontotheke/ontopoiesis/)
+for installation, the quickstart, command guides, and CLI reference.
 
 ## License
 
-Ontopoiesis is licensed under the [Apache License 2.0](LICENSE).
+Ontopoiesis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontopoiesis/LICENSE).
