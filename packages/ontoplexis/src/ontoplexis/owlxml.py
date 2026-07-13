@@ -4,8 +4,15 @@ OWL/XML is the OWL 2 structural specification serialized as XML, so the
 mapping is mechanical rather than per-construct: one element occurrence is one
 node, the element name is the node kind, XML attributes are node properties,
 and child order is edge position. Named entities merge by (kind, IRI), leaf
-values (Literal, IRI, AbbreviatedIRI) merge by content, and anonymous
-individuals merge by nodeID; every other element occurrence is its own node.
+values (Literal, IRI) merge by content, and anonymous individuals merge by
+nodeID; every other element occurrence is its own node.
+
+Abbreviated IRIs are resolved to full IRIs at parse time against the document's
+`<Prefix>` declarations: an `abbreviatedIRI` attribute becomes an `iri`
+property and an `<AbbreviatedIRI>` leaf becomes an `IRI` value. The stored graph
+therefore carries one identity representation, so a term referenced both ways
+is a single node. This preserves the functional-syntax round-trip contract
+(prefix form is not observable there) while making entity identity uniform.
 
 The mapping is bijective by construction: `serialize_owlxml(parse_owlxml(x))`
 reproduces the same element tree, and the round-trip fidelity tests compare
@@ -25,10 +32,11 @@ _XML_NS = "http://www.w3.org/XML/1998/namespace"
 
 DbType = Literal["STRING", "INT64"]
 
-# XML attribute (Clark notation for xml:*) <-> node property name.
+# XML attribute (Clark notation for xml:*) <-> node property name. The
+# `abbreviatedIRI` attribute is handled separately (resolved to `iri`), so it is
+# absent here.
 _ATTR_TO_PROP: dict[str, str] = {
     "IRI": "iri",
-    "abbreviatedIRI": "abbreviated_iri",
     "cardinality": "cardinality",
     "nodeID": "node_id",
     "datatypeIRI": "datatype_iri",
@@ -45,7 +53,6 @@ _IRI_PROPERTIES = frozenset({"iri", "datatype_iri", "ontology_iri", "version_iri
 # Serialized attribute names (xml:* written literally; ET emits them verbatim).
 _PROP_TO_ATTR: dict[str, str] = {
     "iri": "IRI",
-    "abbreviated_iri": "abbreviatedIRI",
     "cardinality": "cardinality",
     "node_id": "nodeID",
     "datatype_iri": "datatypeIRI",
@@ -60,7 +67,6 @@ _PROP_TO_ATTR: dict[str, str] = {
 #: `text` holds element text content (Literal values, Import IRIs, …).
 SCALAR_PROPERTIES: tuple[tuple[str, DbType], ...] = (
     ("iri", "STRING"),
-    ("abbreviated_iri", "STRING"),
     ("node_id", "STRING"),
     ("datatype_iri", "STRING"),
     ("lang", "STRING"),
@@ -75,7 +81,9 @@ SCALAR_PROPERTIES: tuple[tuple[str, DbType], ...] = (
 _ENTITY_KINDS = frozenset(
     {"Class", "Datatype", "ObjectProperty", "DataProperty", "AnnotationProperty", "NamedIndividual"}
 )
-_VALUE_KINDS = frozenset({"Literal", "IRI", "AbbreviatedIRI"})
+# `AbbreviatedIRI` leaves are remapped to `IRI` during the walk, so only these
+# two value kinds ever reach the merge table.
+_VALUE_KINDS = frozenset({"Literal", "IRI"})
 
 # Query-facing role names for a kind's non-annotation children: leading
 # positional names, then a repeated name for any remaining children. Roles are
@@ -194,9 +202,22 @@ def parse_owlxml(text: str) -> Graph:
         raise OwlXmlStructureError(
             f"Expected an <Ontology> root element, got <{_local(root.tag)}>."
         )
-    builder = _Builder()
+    builder = _Builder(prefixes=_collect_prefixes(root))
     builder.walk(root)
     return Graph(nodes=tuple(builder.nodes.values()), edges=tuple(builder.edges))
+
+
+def _collect_prefixes(root: ET.Element) -> dict[str, str]:
+    """Map prefix name (``""`` for the default) to namespace IRI.
+
+    `<Prefix>` declarations are direct children of `<Ontology>`, so the whole map
+    is known before any abbreviated IRI in the body is resolved.
+    """
+    prefixes: dict[str, str] = {}
+    for child in root:
+        if _local(child.tag) == "Prefix":
+            prefixes[child.attrib.get("name", "")] = child.attrib.get("IRI", "")
+    return prefixes
 
 
 def serialize_owlxml(graph: Graph) -> str:
@@ -241,18 +262,23 @@ def role_for(parent_kind: str, child_kind: str, child_index: int) -> str | None:
 
 
 class _Builder:
-    def __init__(self) -> None:
+    def __init__(self, prefixes: dict[str, str]) -> None:
         self.nodes: dict[str, Node] = {}
         self.edges: list[Edge] = []
         self._counter = 0
         self._merged: dict[tuple[str | int | None, ...], str] = {}
+        self._prefixes = prefixes
 
     def walk(self, element: ET.Element, base: str | None = None) -> str:
-        kind = _local(element.tag)
+        raw_kind = _local(element.tag)
         own_base = element.attrib.get(_XML_BASE_ATTR)
         if own_base is not None:
             base = urljoin(base, own_base) if base else own_base
-        properties = _element_properties(element, kind, base)
+        properties = _element_properties(element, raw_kind, base, self._prefixes)
+        # An abbreviated-IRI leaf denotes the same thing as an <IRI> leaf, so it
+        # is stored as one; entity refs keep their element kind (identity moved
+        # from the abbreviatedIRI attribute to the resolved `iri` property).
+        kind = "IRI" if raw_kind == "AbbreviatedIRI" else raw_kind
         merge_key = _merge_key(kind, properties)
         if merge_key is not None and merge_key in self._merged:
             uid = self._merged[merge_key]
@@ -278,10 +304,15 @@ def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _element_properties(element: ET.Element, kind: str, base: str | None) -> dict[str, str | int]:
+def _element_properties(
+    element: ET.Element, kind: str, base: str | None, prefixes: dict[str, str]
+) -> dict[str, str | int]:
     properties: dict[str, str | int] = {}
     for attr_name, value in element.attrib.items():
         if attr_name == _XML_BASE_ATTR:
+            continue
+        if attr_name == "abbreviatedIRI":
+            properties["iri"] = _resolve_curie(value, prefixes)
             continue
         prop = _ATTR_TO_PROP.get(attr_name)
         if prop is None:
@@ -301,7 +332,12 @@ def _element_properties(element: ET.Element, kind: str, base: str | None) -> dic
             properties["text"] = raw_text
         elif raw_text.strip():
             text = raw_text.strip()
-            properties["text"] = _resolve_iri(text, base) if kind in ("IRI", "Import") else text
+            if kind == "AbbreviatedIRI":
+                properties["text"] = _resolve_curie(text, prefixes)
+            elif kind in ("IRI", "Import"):
+                properties["text"] = _resolve_iri(text, base)
+            else:
+                properties["text"] = text
     return properties
 
 
@@ -311,9 +347,18 @@ def _resolve_iri(value: str, base: str | None) -> str:
     return urljoin(base, value)
 
 
+def _resolve_curie(value: str, prefixes: dict[str, str]) -> str:
+    """Expand a ``prefix:local`` abbreviated IRI against the prefix map."""
+    name, _, local = value.partition(":")
+    namespace = prefixes.get(name)
+    if namespace is None:
+        raise OwlXmlStructureError(f"Abbreviated IRI {value!r} uses undeclared prefix {name!r}.")
+    return namespace + local
+
+
 def _merge_key(kind: str, properties: dict[str, str | int]) -> tuple[str | int | None, ...] | None:
     if kind in _ENTITY_KINDS:
-        return (kind, properties.get("iri"), properties.get("abbreviated_iri"))
+        return (kind, properties.get("iri"))
     if kind == "AnonymousIndividual":
         return (kind, properties.get("node_id"))
     if kind in _VALUE_KINDS:

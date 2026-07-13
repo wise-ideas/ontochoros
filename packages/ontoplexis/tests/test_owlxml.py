@@ -240,3 +240,77 @@ def test_serialize_rejects_dangling_edge() -> None:
     )
     with pytest.raises(OwlXmlStructureError, match="ghost"):
         serialize_owlxml(graph)
+
+
+_ABBREVIATED_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+          ontologyIRI="http://example.org/o">
+    <Prefix name="obo" IRI="http://purl.obolibrary.org/obo/"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration><Class abbreviatedIRI="obo:GO_0000001"/></Declaration>
+    <Declaration><Class IRI="http://purl.obolibrary.org/obo/GO_0000002"/></Declaration>
+    <SubClassOf>
+        <Class abbreviatedIRI="obo:GO_0000002"/>
+        <Class IRI="http://purl.obolibrary.org/obo/GO_0000001"/>
+    </SubClassOf>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <AbbreviatedIRI>obo:GO_0000001</AbbreviatedIRI>
+        <Literal>first</Literal>
+    </AnnotationAssertion>
+</Ontology>
+"""
+
+
+def test_abbreviated_iri_attribute_resolves_to_full_iri() -> None:
+    graph = parse_owlxml(_ABBREVIATED_OWLXML)
+
+    classes = {n.iri for n in graph.nodes if n.kind == "Class"}
+    assert classes == {
+        "http://purl.obolibrary.org/obo/GO_0000001",
+        "http://purl.obolibrary.org/obo/GO_0000002",
+    }
+    assert not any("abbreviated_iri" in n.properties for n in graph.nodes)
+
+
+def test_abbreviated_and_full_reference_merge_to_one_entity() -> None:
+    graph = parse_owlxml(_ABBREVIATED_OWLXML)
+
+    # GO_0000002 is declared with a full IRI and referenced with an abbreviated
+    # one; both must resolve to the same merged node.
+    go2 = [
+        n
+        for n in graph.nodes
+        if n.kind == "Class" and n.iri == "http://purl.obolibrary.org/obo/GO_0000002"
+    ]
+    assert len(go2) == 1
+
+
+def test_abbreviated_iri_leaf_becomes_resolved_iri_value() -> None:
+    graph = parse_owlxml(_ABBREVIATED_OWLXML)
+
+    assert not any(n.kind == "AbbreviatedIRI" for n in graph.nodes)
+    subjects = [
+        n
+        for n in graph.nodes
+        if n.kind == "IRI"
+        and n.properties.get("text") == "http://purl.obolibrary.org/obo/GO_0000001"
+    ]
+    assert len(subjects) == 1
+
+
+def test_resolved_iris_survive_serialization_round_trip() -> None:
+    once = serialize_owlxml(parse_owlxml(_ABBREVIATED_OWLXML))
+
+    assert "abbreviatedIRI" not in once
+    assert "http://purl.obolibrary.org/obo/GO_0000001" in once
+    # Reparsing the resolved document is stable.
+    assert serialize_owlxml(parse_owlxml(once)) == once
+
+
+def test_undeclared_prefix_is_rejected() -> None:
+    document = _ABBREVIATED_OWLXML.replace(
+        'abbreviatedIRI="obo:GO_0000001"', 'abbreviatedIRI="zz:X"'
+    )
+    with pytest.raises(OwlXmlStructureError, match="undeclared prefix"):
+        parse_owlxml(document)
