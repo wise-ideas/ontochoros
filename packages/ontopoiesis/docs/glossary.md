@@ -6,10 +6,9 @@ This page collects the project-specific terms used across the Ontopoiesis docume
 
 ## Ladybug projection
 
-The `.lbug` graph database file produced by `ontopoiesis build`: a content-addressed,
-queryable encoding of one OWL 2 document as a labelled property graph. It is not an OWL
-serialization, and it should not be stored as a durable artifact between Ontopoiesis
-versions.
+The `.lbug` graph database file produced by `ontopoiesis build`: a queryable encoding of
+one OWL 2 document as a labelled property graph. It is not an OWL serialization, and it
+should not be stored as a durable artifact between Ontopoiesis versions.
 
 ## `.lbug` file
 
@@ -30,9 +29,10 @@ equivalent serializations.
 
 ## UID
 
-A content-addressed identifier assigned to each node in a projection. It is stable for
-that construct within one built projection, but recomputed on rebuild. Use `iri` rather
-than `uid` for durable external references.
+An identifier assigned to each node in a projection, in document order (`n0`, `n1`, …).
+It is a handle within one built projection but is recomputed on rebuild and not stable
+across builds. Use `iri` rather than `uid` for durable external references. (Migrations
+use the separate, deterministic `scalar_uid`/`axiom_uid` helpers for `MERGE` idempotence.)
 
 ## projection slice
 
@@ -43,4 +43,4 @@ the input to `ontopoiesis render`.
 ## Ladybug
 
 The embedded graph database engine used to store and query projections. The
-`ontoplexus.graph` layer depends on `real_ladybug` directly.
+`ontoplexis.graph` layer depends on `real_ladybug` directly.

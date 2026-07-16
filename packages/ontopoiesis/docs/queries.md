@@ -56,7 +56,6 @@ On the bundled family ontology:
   ObjectPropertyChain
   ObjectSomeValuesFrom
   Ontology
-  OntologyDocument
   Prefix
   SubClassOf
   SubObjectPropertyOf
@@ -92,8 +91,8 @@ Named subclass relationships:
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(sub:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(sup:N {kind: 'Class'})
+      -[:E {role: 'sub'}]->(sub:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(sup:N {kind: 'Class'})
 WHERE sub.iri IS NOT NULL AND sup.iri IS NOT NULL
 RETURN sub.iri AS subclass, sup.iri AS superclass
 ORDER BY subclass
@@ -112,8 +111,8 @@ MATCH (cls:N {kind: 'Class'})
 WHERE cls.iri IS NOT NULL
   AND NOT EXISTS {
     MATCH (ax:N {kind: 'SubClassOf'})
-          -[:E {role: 'sub_class_expression'}]->(cls),
-          (ax)-[:E {role: 'super_class_expression'}]->(sup:N {kind: 'Class'})
+          -[:E {role: 'sub'}]->(cls),
+          (ax)-[:E {role: 'super'}]->(sup:N {kind: 'Class'})
     WHERE sup.iri IS NOT NULL
   }
 RETURN cls.iri AS root_class
@@ -138,7 +137,7 @@ Named equivalence relationships:
 
 ```cypher
 MATCH (ax:N {kind: 'EquivalentClasses'})
-      -[:E {role: 'class_expressions'}]->(cls:N {kind: 'Class'})
+      -[:E {role: 'operand'}]->(cls:N {kind: 'Class'})
 WHERE cls.iri IS NOT NULL
 RETURN ax.uid AS axiom, cls.iri AS class
 ORDER BY axiom, class
@@ -149,17 +148,20 @@ On the bundled family ontology:
 ```
   axiom   class
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  0x23    http://example.org/Parent
-  0x25    http://example.org/NarcisticPerson
+  n37     http://example.org/NarcisticPerson
+  n39     http://example.org/Parent
 ```
+
+(`uid` values like `n37` are assigned in document order and are not stable across
+rebuilds — filter and join on `iri`, not `uid`.)
 
 Classes defined by existential restriction:
 
 ```cypher
 MATCH (ax:N {kind: 'EquivalentClasses'})
-      -[:E {role: 'class_expressions'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'class_expressions'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(prop:N {kind: 'ObjectProperty'})
+      -[:E {role: 'operand'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'operand'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(prop:N {kind: 'ObjectProperty'})
 WHERE cls.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN cls.iri AS class, prop.iri AS via_property
 ORDER BY class
@@ -171,8 +173,8 @@ Sub-property relationships:
 
 ```cypher
 MATCH (ax:N {kind: 'SubObjectPropertyOf'})
-      -[:E {role: 'sub_object_property_expression'}]->(sub:N),
-      (ax)-[:E {role: 'super_object_property_expression'}]->(sup:N)
+      -[:E {role: 'sub'}]->(sub:N),
+      (ax)-[:E {role: 'super'}]->(sup:N)
 WHERE sub.iri IS NOT NULL AND sup.iri IS NOT NULL
 RETURN sub.iri AS sub_property, sup.iri AS super_property
 ORDER BY sub_property
@@ -185,11 +187,11 @@ Property chains — ordered links of a `SubObjectPropertyOf` chain clause:
 
 ```cypher
 MATCH (ax:N {kind: 'SubObjectPropertyOf'})
-      -[:E {role: 'super_object_property_expression'}]->(sup:N),
-      (ax)-[:E {role: 'sub_object_property_expression'}]->(:N {kind: 'ObjectPropertyChain'})
-      -[link:E {role: 'object_property_expressions'}]->(step:N)
+      -[:E {role: 'super'}]->(sup:N),
+      (ax)-[:E {role: 'sub'}]->(:N {kind: 'ObjectPropertyChain'})
+      -[link:E {role: 'operand'}]->(step:N)
 WHERE sup.iri IS NOT NULL AND step.iri IS NOT NULL
-RETURN sup.iri AS property, step.iri AS chain_step, link.endpoint_order AS position
+RETURN sup.iri AS property, step.iri AS chain_step, link.position AS position
 ORDER BY property, position
 ```
 
@@ -198,8 +200,8 @@ On the bundled family ontology:
 ```
   property                      chain_step                      position
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  http://example.org/hasUncle   http://example.org/hasFather   1
-  http://example.org/hasUncle   http://example.org/hasBrother  2
+  http://example.org/hasUncle   http://example.org/hasFather   0
+  http://example.org/hasUncle   http://example.org/hasBrother  1
 ```
 
 ## Property characteristics
@@ -208,7 +210,7 @@ Transitive object properties:
 
 ```cypher
 MATCH (n:N {kind: 'TransitiveObjectProperty'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'property'}]->(prop:N)
 WHERE prop.iri IS NOT NULL
 RETURN prop.iri AS property
 ORDER BY property
@@ -218,7 +220,7 @@ Functional object properties:
 
 ```cypher
 MATCH (n:N {kind: 'FunctionalObjectProperty'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'property'}]->(prop:N)
 WHERE prop.iri IS NOT NULL
 RETURN prop.iri AS property
 ORDER BY property
@@ -228,7 +230,7 @@ Annotation property domains and ranges:
 
 ```cypher
 MATCH (ax:N {kind: 'AnnotationPropertyDomain'})
-      -[:E {role: 'annotation_property'}]->(prop:N),
+      -[:E {role: 'property'}]->(prop:N),
       (ax)-[:E {role: 'domain'}]->(dom:N)
 WHERE prop.iri IS NOT NULL
 RETURN prop.iri AS property, COALESCE(dom.iri, dom.kind) AS domain
@@ -237,7 +239,7 @@ ORDER BY property
 
 ```cypher
 MATCH (ax:N {kind: 'AnnotationPropertyRange'})
-      -[:E {role: 'annotation_property'}]->(prop:N),
+      -[:E {role: 'property'}]->(prop:N),
       (ax)-[:E {role: 'range'}]->(rng:N)
 WHERE prop.iri IS NOT NULL
 RETURN prop.iri AS property, COALESCE(rng.iri, rng.kind) AS range
@@ -258,8 +260,8 @@ Data property domain:
 
 ```cypher
 MATCH (ax:N {kind: 'DataPropertyDomain'})
-      -[:E {role: 'data_property_expression'}]->(prop:N),
-      (ax)-[:E {role: 'class_expression'}]->(cls:N)
+      -[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'domain'}]->(cls:N)
 WHERE prop.iri IS NOT NULL AND cls.iri IS NOT NULL
 RETURN prop.iri AS property, cls.iri AS domain
 ORDER BY property
@@ -269,8 +271,8 @@ Data property range:
 
 ```cypher
 MATCH (ax:N {kind: 'DataPropertyRange'})
-      -[:E {role: 'data_property_expression'}]->(prop:N),
-      (ax)-[:E {role: 'data_range'}]->(rng:N)
+      -[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'range'}]->(rng:N)
 WHERE prop.iri IS NOT NULL
 RETURN prop.iri AS property, COALESCE(rng.iri, rng.kind) AS range
 ORDER BY property
@@ -280,13 +282,13 @@ Data property assertions:
 
 ```cypher
 MATCH (ax:N {kind: 'DataPropertyAssertion'})
-      -[:E {role: 'source_individual'}]->(src:N),
-      (ax)-[:E {role: 'data_property_expression'}]->(prop:N),
-      (ax)-[:E {role: 'target_value'}]->(val:N)
+      -[:E {role: 'subject'}]->(src:N),
+      (ax)-[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'object'}]->(val:N)
 WHERE src.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN src.iri AS source,
        prop.iri AS property,
-       COALESCE(val.quoted_string, val.lexical_form, val.iri, val.kind) AS value
+       val.text AS value
 ORDER BY source, property
 ```
 
@@ -296,9 +298,9 @@ Minimum cardinality restrictions in subclass axioms:
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(card:N {kind: 'ObjectMinCardinality'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'sub'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(card:N {kind: 'ObjectMinCardinality'})
+      -[:E {role: 'property'}]->(prop:N)
 WHERE cls.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN cls.iri AS class, prop.iri AS property, card.cardinality AS min_count
 ORDER BY class, property
@@ -308,9 +310,9 @@ Maximum cardinality restrictions:
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(card:N {kind: 'ObjectMaxCardinality'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'sub'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(card:N {kind: 'ObjectMaxCardinality'})
+      -[:E {role: 'property'}]->(prop:N)
 WHERE cls.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN cls.iri AS class, prop.iri AS property, card.cardinality AS max_count
 ORDER BY class, property
@@ -320,9 +322,9 @@ Exact cardinality restrictions:
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(card:N {kind: 'ObjectExactCardinality'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'sub'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(card:N {kind: 'ObjectExactCardinality'})
+      -[:E {role: 'property'}]->(prop:N)
 WHERE cls.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN cls.iri AS class, prop.iri AS property, card.cardinality AS exact_count
 ORDER BY class, property
@@ -332,7 +334,7 @@ Has-key axioms:
 
 ```cypher
 MATCH (ax:N {kind: 'HasKey'})
-      -[:E {role: 'class_expression'}]->(cls:N {kind: 'Class'})
+      -[:E {role: 'class'}]->(cls:N {kind: 'Class'})
 WHERE cls.iri IS NOT NULL
 RETURN cls.iri AS class, ax.uid AS has_key_axiom
 ORDER BY class
@@ -344,7 +346,7 @@ All named individuals and their explicitly asserted types:
 
 ```cypher
 MATCH (ax:N {kind: 'ClassAssertion'})
-      -[:E {role: 'class_expression'}]->(cls:N {kind: 'Class'}),
+      -[:E {role: 'class'}]->(cls:N {kind: 'Class'}),
       (ax)-[:E {role: 'individual'}]->(ind:N {kind: 'NamedIndividual'})
 WHERE ind.iri IS NOT NULL AND cls.iri IS NOT NULL
 RETURN ind.iri AS individual, cls.iri AS type
@@ -358,9 +360,9 @@ Object property assertions between named individuals:
 
 ```cypher
 MATCH (ax:N {kind: 'ObjectPropertyAssertion'})
-      -[:E {role: 'source_individual'}]->(src:N),
-      (ax)-[:E {role: 'object_property_expression'}]->(prop:N),
-      (ax)-[:E {role: 'target_individual'}]->(tgt:N)
+      -[:E {role: 'subject'}]->(src:N),
+      (ax)-[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'object'}]->(tgt:N)
 WHERE src.iri IS NOT NULL AND prop.iri IS NOT NULL AND tgt.iri IS NOT NULL
 RETURN src.iri AS source, prop.iri AS property, tgt.iri AS target
 ORDER BY source, property
@@ -373,9 +375,9 @@ Negative object property assertions:
 
 ```cypher
 MATCH (ax:N {kind: 'NegativeObjectPropertyAssertion'})
-      -[:E {role: 'source_individual'}]->(src:N),
-      (ax)-[:E {role: 'object_property_expression'}]->(prop:N),
-      (ax)-[:E {role: 'target_individual'}]->(tgt:N)
+      -[:E {role: 'subject'}]->(src:N),
+      (ax)-[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'object'}]->(tgt:N)
 WHERE src.iri IS NOT NULL AND prop.iri IS NOT NULL AND tgt.iri IS NOT NULL
 RETURN src.iri AS source, prop.iri AS property, tgt.iri AS target
 ORDER BY source, property
@@ -417,23 +419,22 @@ ORDER BY ontology_iri
 
 ## Annotation assertions
 
-`AnnotationAssertion` nodes store the annotated entity IRI as `annotation_subject`, a
-reference edge to the annotation property, and a reference edge to the annotation value.
-The annotation value may be a `StringLiteralWithLanguage`, `StringLiteralNoLanguage`, or
-`TypedLiteral` node. `COALESCE` across `quoted_string`, `lexical_form`, and `iri` covers
-all three: string literals carry `quoted_string`, typed literals carry `lexical_form`,
-and IRI-valued annotations carry `iri`.
+An `AnnotationAssertion` has three edges: `property` (the annotation property),
+`subject` (an `IRI` node whose `text` is the annotated entity's IRI), and `value` (the
+annotation value). A literal value is a `Literal` node — its string is `val.text`, its
+language tag `val.lang`; an IRI-valued annotation points at an `IRI` node (also `text`).
 
 All annotation assertions on a specific entity:
 
 ```cypher
 MATCH (ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(prop:N),
-      (ax)-[:E {role: 'annotation_value'}]->(val:N)
-WHERE ax.annotation_subject = 'http://example.org/YourClass'
+      -[:E {role: 'property'}]->(prop:N),
+      (ax)-[:E {role: 'subject'}]->(subj:N),
+      (ax)-[:E {role: 'value'}]->(val:N)
+WHERE subj.text = 'http://example.org/YourClass'
 RETURN prop.iri AS property,
-       COALESCE(val.quoted_string, val.lexical_form, val.iri) AS value,
-       val.language_tag AS lang
+       val.text AS value,
+       val.lang AS lang
 ORDER BY property
 ```
 
@@ -441,23 +442,28 @@ All `rdfs:label` annotations across the ontology:
 
 ```cypher
 MATCH (ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
-      (ax)-[:E {role: 'annotation_value'}]->(val:N)
-WHERE ax.annotation_subject IS NOT NULL
-RETURN ax.annotation_subject AS entity,
-       COALESCE(val.quoted_string, val.lexical_form) AS label,
-       val.language_tag AS lang
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
+      (ax)-[:E {role: 'subject'}]->(subj:N),
+      (ax)-[:E {role: 'value'}]->(val:N)
+RETURN subj.text AS entity,
+       val.text AS label,
+       val.lang AS lang
 ORDER BY entity, lang
 ```
+
+The derived `annotation_value` edge collapses this to one hop, joining the labelled
+entity node straight to its literal — see the
+[derived-relations reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/).
 
 Deprecated entities:
 
 ```cypher
 MATCH (ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.w3.org/2002/07/owl#deprecated'}),
-      (ax)-[:E {role: 'annotation_value'}]->(val:N)
-WHERE val.lexical_form = 'true'
-RETURN ax.annotation_subject AS deprecated_entity
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2002/07/owl#deprecated'}),
+      (ax)-[:E {role: 'subject'}]->(subj:N),
+      (ax)-[:E {role: 'value'}]->(val:N)
+WHERE val.text = 'true'
+RETURN subj.text AS deprecated_entity
 ORDER BY deprecated_entity
 ```
 
@@ -478,8 +484,8 @@ WHERE {
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(sub:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(sup:N {kind: 'Class'})
+      -[:E {role: 'sub'}]->(sub:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(sup:N {kind: 'Class'})
 WHERE sub.iri IS NOT NULL AND sup.iri IS NOT NULL
 RETURN sub.iri AS subclass, sup.iri AS superclass
 ORDER BY subclass
@@ -499,10 +505,10 @@ WHERE {
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(prop:N),
-      (restriction)-[:E {role: 'class_expression'}]->(filler:N)
+      -[:E {role: 'sub'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(prop:N),
+      (restriction)-[:E {role: 'filler'}]->(filler:N)
 WHERE cls.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN cls.iri AS class, prop.iri AS property,
        COALESCE(filler.iri, filler.kind) AS filler
@@ -521,11 +527,11 @@ WHERE {
 
 ```cypher
 MATCH (ax:N {kind: 'SubObjectPropertyOf'})
-      -[:E {role: 'super_object_property_expression'}]->(sup:N),
-      (ax)-[:E {role: 'sub_object_property_expression'}]->(:N {kind: 'ObjectPropertyChain'})
-      -[link:E {role: 'object_property_expressions'}]->(step:N)
+      -[:E {role: 'super'}]->(sup:N),
+      (ax)-[:E {role: 'sub'}]->(:N {kind: 'ObjectPropertyChain'})
+      -[link:E {role: 'operand'}]->(step:N)
 WHERE sup.iri IS NOT NULL AND step.iri IS NOT NULL
-RETURN sup.iri AS property, step.iri AS chain_step, link.endpoint_order AS position
+RETURN sup.iri AS property, step.iri AS chain_step, link.position AS position
 ORDER BY property, position
 ```
 
@@ -544,7 +550,7 @@ ORDER BY ?axiom ?class
 
 ```cypher
 MATCH (ax:N {kind: 'DisjointClasses'})
-      -[:E {role: 'class_expressions'}]->(cls:N)
+      -[:E {role: 'operand'}]->(cls:N)
 WHERE cls.iri IS NOT NULL
 RETURN ax.uid AS axiom, cls.iri AS class
 ORDER BY axiom, class
@@ -568,13 +574,13 @@ ORDER BY ?class ?superClass ?property
 
 ```cypher
 MATCH (subAx:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls:N {kind: 'Class'}),
-      (subAx)-[:E {role: 'super_class_expression'}]->(sup:N {kind: 'Class'}),
+      -[:E {role: 'sub'}]->(cls:N {kind: 'Class'}),
+      (subAx)-[:E {role: 'super'}]->(sup:N {kind: 'Class'}),
       (restrictionAx:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(cls),
-      (restrictionAx)-[:E {role: 'super_class_expression'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(prop:N),
-      (restriction)-[:E {role: 'class_expression'}]->(filler:N)
+      -[:E {role: 'sub'}]->(cls),
+      (restrictionAx)-[:E {role: 'super'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(prop:N),
+      (restriction)-[:E {role: 'filler'}]->(filler:N)
 WHERE cls.iri IS NOT NULL
   AND sup.iri IS NOT NULL
   AND prop.iri IS NOT NULL

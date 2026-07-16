@@ -3,12 +3,12 @@ MATCH
     (sub:N  {iri: '<< sub_iri >>'}),
     (super:N {iri: '<< super_iri >>'})
 MERGE (axiom:N {
-    uid: '<< axiom_uid("SubClassOf", [("sub_class_expression", scalar_uid("Class", sub_iri)),
-                                      ("super_class_expression", scalar_uid("Class", super_iri))]) >>',
+    uid: '<< axiom_uid("SubClassOf", [("sub", scalar_uid("Class", sub_iri)),
+                                      ("super", scalar_uid("Class", super_iri))]) >>',
     kind: 'SubClassOf'
 })
-MERGE (axiom)-[:E {role: 'sub_class_expression'}]->(sub)
-MERGE (axiom)-[:E {role: 'super_class_expression'}]->(super)
+MERGE (axiom)-[:E {role: 'sub', position: 0}]->(sub)
+MERGE (axiom)-[:E {role: 'super', position: 1}]->(super)
 {%- endmacro %}
 
 // Assert the pizza class hierarchy.

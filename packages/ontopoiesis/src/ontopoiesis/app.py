@@ -7,12 +7,14 @@ import typer
 import typer.core
 
 from ontopoiesis.commands.build import build
+from ontopoiesis.commands.convert import convert
 from ontopoiesis.commands.diff import diff
 from ontopoiesis.commands.export import export
 from ontopoiesis.commands.impact import impact
 from ontopoiesis.commands.lint_command import lint
 from ontopoiesis.commands.migrate import migrate
 from ontopoiesis.commands.query import query
+from ontopoiesis.commands.reason import reason
 from ontopoiesis.commands.render_command import render
 from ontopoiesis.commands.test import test
 from ontopoiesis.errors import translate_cli_errors
@@ -51,6 +53,8 @@ def main(
 
 
 app.command()(build)
+app.command()(convert)
+app.command()(reason)
 app.command()(diff)
 app.command()(export)
 app.add_typer(impact, name="impact")

@@ -39,10 +39,26 @@ scalar values, and child order *is* its argument order. So the mapping is:
 Relative IRIs are resolved against `xml:base` at parse time, so the stored
 graph is always absolute and base-free.
 
-The only OWL-specific knowledge in the system is a small data table that
-decorates edges with query-facing **roles** (`sub`, `super`, `property`,
-`filler`, `operand`, `annotation`, …) so queries read naturally. Roles are
+The only OWL-specific knowledge in the system lives in two small data tables:
+one that decorates edges with query-facing **roles** (`sub`, `super`,
+`property`, `filler`, `operand`, `annotation`, …) so queries read naturally,
+and one that derives the one-hop convenience edges described below. Roles are
 decoration; `position` is what round-trips. See [Edge Roles](../reference/roles.md).
+
+## The derived convenience layer
+
+The structural graph is faithful but verbose: every binary fact — "Dog is a
+subclass of Animal", "rex has type Dog", "Dog's label is *Dog*" — is a two-hop
+join through an axiom node. A third table, `D`, materializes exactly those
+binary relations as one-hop edges (see
+[Derived Relations](../reference/derived.md)).
+
+`D` is a **cache over asserted structure, not inference**: each derived edge is
+a mechanical collapse of a construct whose OWL 2 → RDF mapping is a single
+triple. `graph()` and serialization never read it, so round-trip fidelity is
+untouched by construction. Every projection built by `build_projection` or
+`save_projection` derives it automatically; after authoring or migrating a
+projection with raw Cypher, call `derive_edges` to refresh it.
 
 ## Where OWLAPI fits
 
@@ -72,4 +88,10 @@ construct, the reference implementation fails the build.
   graph shape; typed models live in the sister package `ontophora`.
 - **No runtime format conversion, reasoning, or profile checking.** OWLAPI
   is the test oracle, not a dependency.
-- **No RDF triple view.** See above.
+- **No RDF-encoded graph.** The derived table `D` gives the one-hop binary
+  relations RDF users reach for, but as a cache over the structural graph —
+  never reified axioms, `rdf:first`/`rdf:rest` chains, or blank-node scatter.
+- **No materialized transitive closure.** Deliberate: the closure can be
+  quadratic in hierarchy size and doubles the cache-invalidation surface,
+  while bounded recursive Cypher over `D` already answers reachability
+  queries. Traverse instead of materializing.

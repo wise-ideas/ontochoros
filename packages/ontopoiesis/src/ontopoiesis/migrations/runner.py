@@ -15,6 +15,7 @@ from ontoplexis import (
     Projection,
     ProjectionStorageError,
     WritableProjection,
+    derive_edges,
 )
 
 from ontopoiesis.errors import OntopoiesisDomainError
@@ -118,6 +119,15 @@ class MigrationRunner:
             migration_id=migration_id,
             path=path,
         )
+
+    def refresh_derived_edges(self) -> None:
+        """Rebuild the derived-edge table (``D``) after migrations mutate N/E.
+
+        Migrations author the structural ``N``/``E`` tables directly, which
+        leaves any previously materialized derived edges stale. Re-derive so the
+        query convenience layer matches the migrated structure.
+        """
+        derive_edges(self._require_projection())
 
     def graph(self) -> Graph:
         return self._require_projection().graph()

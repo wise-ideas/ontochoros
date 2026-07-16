@@ -17,8 +17,8 @@ depth 1 means a direct reference.
 In the projection, every OWL construct is a node and structural relationships are
 edges. An upstream traversal follows those edges in reverse — from the seed entity
 back through the constructs that reference it. The result reports the full reachable
-upstream path, including direct referring axioms, intermediate expressions, and wrapper
-nodes such as `Ontology` and `OntologyDocument`.
+upstream path, including direct referring axioms, intermediate expressions, and the
+`Ontology` root that ultimately contains them.
 
 ## Usage
 
@@ -33,7 +33,7 @@ Then run one of the two traversals:
 ```bash
 ontopoiesis impact upstream family.lbug --iri http://example.org/hasChild
 ontopoiesis impact downstream family.lbug --iri http://example.org/Father
-ontopoiesis impact downstream family.lbug --uid 0x42
+ontopoiesis impact downstream family.lbug --uid n0
 ```
 
 Pass exactly one seed selector: `--iri` for named entities, or `--uid` for any projected
@@ -44,22 +44,23 @@ construct.
 Upstream reports every construct that can reach the seed through semantic reference
 edges. The result answers "what statements and wrapper constructs mention this entity?"
 
-On the bundled family ontology, `hasChild` is referenced by multiple axioms that are
-themselves referenced by the `OntologyDocument` root. The output includes the full
-upstream chain, ordered by minimum traversal depth:
+On the bundled family ontology, `hasChild` is referenced by its `Declaration` and by the
+`ObjectSomeValuesFrom` restriction that defines `Parent`, which the `EquivalentClasses`
+axiom and the `Ontology` root reach in turn. The output is ordered by minimum traversal
+depth:
 
 ```
-  kind                         iri    uid    depth
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ObjectProperty               ...    ...    1
-  ObjectPropertyDomain         None   ...    2
-  ObjectPropertyRange          None   ...    2
-  Ontology                     ...    ...    3
-  OntologyDocument             None   ...    4
+  uid   kind                   depth   iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  n23   Declaration            1       None
+  n40   ObjectSomeValuesFrom   1       None
+  n39   EquivalentClasses      2       None
+  n0    Ontology               2       None
 ```
 
-On a larger ontology the upstream result shows which class definitions, property axioms,
-annotation statements, and document-level wrappers depend on the entity.
+(`uid` values are assigned in document order and are not stable across rebuilds.) On a
+larger ontology the upstream result shows which class definitions, property axioms, and
+annotation statements depend on the entity.
 
 ## Downstream
 
@@ -109,16 +110,16 @@ axiom list, reaching every class, property, and individual that the ontology
 directly or transitively contains:
 
 ```
-  kind                         iri                                      uid    depth
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  OntologyDocument             None                                     ...    1
-  Prefix                       http://www.w3.org/2002/07/owl            ...    2
-  SubClassOf                   None                                     ...    2
-  EquivalentClasses            None                                     ...    2
-  Class                        http://example.org/Person                ...    3
-  Class                        http://example.org/Parent                ...    3
-  ObjectSomeValuesFrom         None                                     ...    3
-  ObjectProperty               http://example.org/hasChild              ...    4
+  uid   kind                depth   iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  n7    Declaration         1       None
+  n37   EquivalentClasses   1       None
+  n41   SubClassOf          1       None
+  n45   SubObjectPropertyOf 1       None
+  n8    Class               2       http://example.org/Father
+  n16   Class               2       http://example.org/Parent
+  n36   Class               2       http://example.org/Person
+  n40   ObjectSomeValuesFrom 2      None
   ...
 ```
 
@@ -144,10 +145,9 @@ If no row is returned, the entity is not in this projection. If the entity lives
 imported ontology, merge the import closure into the source document before building
 the projection.
 
-**Upstream includes `OntologyDocument`.** This is correct. Every projected ontology has
-document-level wrapper constructs, and entities referenced by ontology content are often
-transitively reachable from those wrappers. Read the lower-depth rows first when you
-want the direct axiom-level impact.
+**Upstream includes the `Ontology` root.** This is expected. Entities used in ontology
+content are transitively reachable from the `Ontology` node that contains their axioms.
+Read the lower-depth rows first when you want the direct axiom-level impact.
 
 ## Related
 

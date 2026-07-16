@@ -43,6 +43,55 @@ itself; Ontopoiesis does not resolve imports during `build`. See
 | `--output`, `-o` | `PATH`   | `input_path` with `.lbug` suffix | Output projection path             |
 | `--force`        | none     | off                              | Overwrite an existing `.lbug` file |
 
+### `convert`
+
+Convert an ontology document to OWL/XML via [ROBOT](https://robot.obolibrary.org/).
+The input format is inferred from the file extension (`.ttl`, `.owl`, `.ofn`,
+`.omn`, `.obo`, …).
+
+```bash
+export ROBOT_JAR=/path/to/robot.jar   # or a .env entry
+ontopoiesis convert ontology.ttl && ontopoiesis build ontology.owx
+```
+
+This is the opt-in bridge for non-OWL/XML sources. It shells out to a
+user-provided ROBOT jar and therefore requires a Java 17+ runtime; nothing is
+bundled, and the rest of the toolchain stays pure Python. ROBOT's own errors
+are reported verbatim — conversion can fail for RDF that is not valid OWL 2.
+
+| Option           | Argument | Default                         | Description                  |
+| ---------------- | -------- | ------------------------------- | ---------------------------- |
+| `--output`, `-o` | `PATH`   | `input_path` with `.owx` suffix | Output OWL/XML path          |
+| `--force`        | none     | off                             | Overwrite an existing output |
+
+### `reason`
+
+Materialize inferred axioms into a new OWL/XML document via ROBOT
+(`robot reason`). Reasoning always stays outside the graph: the output is an
+ordinary document containing the original axioms plus the reasoner's
+inferences, each annotated `is_inferred true` by default. Build it like any
+other document — entailed subsumptions are then one-hop derived edges like any
+told axiom.
+
+```bash
+export ROBOT_JAR=/path/to/robot.jar
+ontopoiesis reason ontology.owx --include-indirect
+ontopoiesis build ontology.reasoned.owx
+```
+
+By default only direct, non-redundant inferences are asserted (ROBOT's
+behaviour); `--include-indirect` asserts the full inferred hierarchy so *every*
+entailed subsumption is a single edge. Requires `ROBOT_JAR` and a JVM, like
+`convert`.
+
+| Option               | Argument | Default                                  | Description                                        |
+| -------------------- | -------- | ---------------------------------------- | -------------------------------------------------- |
+| `--output`, `-o`     | `PATH`   | `input_path` with `.reasoned.owx` suffix | Output OWL/XML path                                |
+| `--reasoner`         | `NAME`   | `ELK`                                    | `ELK`, `HermiT`, `whelk`, `JFact`, or `EMR`        |
+| `--annotate`         | none     | on                                       | Annotate inferred axioms with `is_inferred true` (`--no-annotate` to disable) |
+| `--include-indirect` | none     | off                                      | Also assert indirect inferred axioms               |
+| `--force`            | none     | off                                      | Overwrite an existing output                       |
+
 ### `export`
 
 Serialize a Ladybug graph projection back to an OWL/XML document. The inverse of `build`.

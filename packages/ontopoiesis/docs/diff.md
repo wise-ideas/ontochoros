@@ -34,16 +34,15 @@ ontopoiesis diff before.lbug after.lbug --format json --output diff.json
 Example output (diffing the bundled pizza v1 and v2 projections):
 
 ```
-  status    kind               iri                  count   fingerprint
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  added     Class              https://example.o…   1       12b8fa4cb1…
-  added     Declaration                             1       06687a17eb…
-  added     Ontology           https://example.o…   1       a41528263…
-  removed   Ontology           https://example.o…   1       acd30cd6e…
-  added     OntologyDocument                        1       54cc71a614…
-  removed   OntologyDocument                        1       f2753147d0…
-  added     SubClassOf                              1       bebaa40a77…
+  status   kind          iri             count   fingerprint    ontology_iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  added    Declaration   https://exam…   1       5ca795dc1e95   https://examp…
+  added    SubClassOf    https://exam…   1       1a64b124791c   https://examp…
 ```
+
+`pizza_v2` adds a `SicilianPizza` class under `Pizza`; the diff surfaces its `Declaration`
+(the added entity is represented by its declaration axiom) and the new `SubClassOf` axiom.
+Unchanged axioms and the `Ontology` root produce no rows.
 
 ## Output formats
 
@@ -56,24 +55,18 @@ Printed to stdout. Columns:
 - `iri`
 - `count`
 - `fingerprint`
-- `display_label`
-- `ontology_uid`
 - `ontology_iri`
-- `context_iri`
 
 ### JSON (`--format json`)
 
 An array of objects. Each object contains:
 
-- `status`: `"added"`, `"removed"`, or `"modified"`
+- `status`: `"added"` or `"removed"`
 - `kind`: OWL 2 construct kind string such as `"SubClassOf"` or `"Class"`
 - `iri`: IRI string for named entities, `null` for anonymous constructs
 - `count`: number of constructs with this status/kind/iri combination
 - `fingerprint`: semantic fingerprint
-- `display_label`: nearest display label when available
-- `ontology_uid`: containing ontology UID when available
 - `ontology_iri`: containing ontology IRI when available
-- `context_iri`: nearest named IRI that provides context for the row
 
 ## How the diff identifies constructs
 
@@ -85,37 +78,12 @@ of which document it came from or which UID was assigned during build.
 
 At the axiom level, "changed" does not exist as a diff concept: if `SubClassOf(:A :B)`
 becomes `SubClassOf(:A :C)`, the first fingerprint disappears (removed) and a new one
-appears (added). The two statements are genuinely distinct OWL axioms.
+appears (added). The two statements are genuinely distinct OWL axioms. The same holds for
+editing an annotation: changing `rdfs:label(:Pizza "Pizza")` to `rdfs:label(:Pizza "Pizza
+class")` removes one fingerprint and adds another — every construct is compared by
+fingerprint, so any content change is a removal plus an addition, never an in-place edit.
 
-For the full content-addressing model, see
-[The Projection Graph Model](cypher-model.md#the-uid-and-content-addressing).
-
-### When modified rows appear
-
-`modified` rows are for named constructs whose identity is stable by `(kind, iri)` but
-whose semantic fingerprint changes between projections. The most common case is an
-annotation attached to the same named entity with a different literal value.
-
-A minimal example:
-
-1. Start with an ontology containing an annotation assertion such as
-   `rdfs:label(:Pizza "Pizza")`.
-2. Change only the literal value to `rdfs:label(:Pizza "Pizza class")`.
-3. Rebuild both versions and diff the projections.
-
-The changed annotation assertion then appears as a `modified` row because it is still an
-`AnnotationAssertion` about the same subject, but its fingerprint now reflects a
-different literal node:
-
-```text
-  status    kind                   iri                         count   fingerprint
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  modified  AnnotationAssertion    https://example.org/Pizza   1       8f3d2d1c4e…
-```
-
-This is different from an axiom like `SubClassOf(:A :B)`, where changing either side
-produces a removed row plus an added row because the axiom itself has no stable named
-identity.
+For the identifier model, see [The Projection Graph Model](cypher-model.md#the-uid).
 
 ## What is compared
 
@@ -124,8 +92,6 @@ fingerprint rather than storage UID:
 
 - **Added**: constructs present only in `after`
 - **Removed**: constructs present only in `before`
-- **Modified**: same `(kind, iri)` identity but different semantic fingerprint between
-  `before` and `after`
 
 Nodes that are present in both projections with the same fingerprint are not reported,
 even if the source documents differ in whitespace, element ordering, blank-node names,
@@ -137,11 +103,10 @@ The current implementation is intentionally minimal:
 
 - input must be two pre-built `.lbug` projections
 - output formats are `table` and `json`
-- output rows are aggregated as `added`, `removed`, or `modified`
+- output rows are aggregated as `added` or `removed`
 - construct identity is based on semantic fingerprints, not storage UIDs
-- `Ontology` and `OntologyDocument` wrapper constructs appear in the diff when the
-  axiom list changes (their fingerprint is derived from the ordered axiom list, so any
-  added or removed axiom changes both fingerprints)
+- the `Ontology` root does not produce diff rows of its own; only the added and removed
+  constructs appear
 - rename detection and migration generation are future work
 
 The diff compares explicitly stated axioms in two built projections. Inferred axioms
@@ -162,10 +127,6 @@ sanity check, diff a projection against itself — the result should be empty:
 ontopoiesis diff before.lbug before.lbug
 ```
 
-**`Ontology` and `OntologyDocument` nodes appear in every diff.** This is expected.
-Their fingerprints are derived from the full ordered axiom list, so any change to any
-axiom changes both fingerprints. They can be ignored when reading semantic diffs.
-
 **A renamed entity appears as a full removal and full addition.** This is correct: a
 renamed class is a genuinely different IRI. All axioms that referenced the old IRI
 will appear as removed and their equivalents referencing the new IRI as added.
@@ -181,4 +142,4 @@ guide](impact.md) for usage and output format.
 For scripted inspection of either projection, see the [Queries reference](queries.md).
 
 For a full description of the semantic fingerprint model used by diff, see
-[The Projection Graph Model](cypher-model.md#the-uid-and-content-addressing).
+[The Projection Graph Model](cypher-model.md#the-uid).

@@ -4,8 +4,9 @@ title: The Graph Schema
 
 # The Graph Schema
 
-One node table `N`, one relationship table `E`. The schema is fixed — it does
-not depend on which constructs an ontology uses.
+One node table `N`, one relationship table `E`, and one derived-edge table
+`D`. The schema is fixed — it does not depend on which constructs an ontology
+uses.
 
 ## Node table `N`
 
@@ -13,8 +14,7 @@ not depend on which constructs an ontology uses.
 |---|---|---|
 | `uid` | STRING (PK) | Synthetic id, assigned in document order (`n0`, `n1`, …) |
 | `kind` | STRING | OWL/XML element name: `Class`, `SubClassOf`, `ObjectSomeValuesFrom`, `Literal`, … |
-| `iri` | STRING | Entity IRI (also `Prefix` expansion and `Datatype` IRI) |
-| `abbreviated_iri` | STRING | CURIE form (`rdfs:label`) when the document used one |
+| `iri` | STRING | Entity IRI (also `Prefix` expansion and `Datatype` IRI); abbreviated IRIs are resolved to full form at parse |
 | `node_id` | STRING | `AnonymousIndividual` blank-node id |
 | `datatype_iri` | STRING | `Literal` datatype |
 | `lang` | STRING | `Literal` language tag |
@@ -38,6 +38,20 @@ are natural join points. Entities with different OWL kinds may use the same IRI.
 Every edge points from a parent element to a child element. An axiom node's
 children are its arguments; the `Ontology` root's children are prefixes,
 imports, annotations, and axioms.
+
+## Derived table `D`
+
+| Column | Type | Meaning |
+|---|---|---|
+| `relation` | STRING | Relation name: `subclass_of`, `type`, `annotation_value`, … |
+| `property` | STRING | Property IRI, on relations that carry one (`asserts`, `annotation`, …) |
+| `quantifier` | STRING | `some` / `only`, on `restriction` edges |
+
+`D` connects the entity (and literal) nodes that a binary axiom relates,
+collapsing the two-hop walk through the axiom node into one edge. It is a
+refreshable cache over `N`/`E` — `graph()` and serialization never read it,
+and `derive_edges` rebuilds it from current structure. See
+[Derived Relations](../reference/derived.md) for the full relation vocabulary.
 
 ## Reading the shape
 

@@ -22,6 +22,7 @@ nav = [
   { "Reference" = [
     { "Public API" = "reference/api.md" },
     { "Edge Roles" = "reference/roles.md" },
+    { "Derived Relations" = "reference/derived.md" },
   ]},
   { "Contributing" = [
     { "Development Setup" = "contrib/setup.md" },

@@ -5,9 +5,9 @@ title: "Package Architecture"
 This page covers `ontopoiesis` only.
 
 `ontopoiesis` is the operator CLI and local workflow layer that sits on top of
-`ontoplexus`. It should explain its own modules clearly, then stop at the
+`ontoplexis`. It should explain its own modules clearly, then stop at the
 boundary of the reusable core package. If you need the internal architecture of
-`ontoplexus`, read the companion package notes in that repository.
+`ontoplexis`, read the companion package notes in that repository.
 
 ## The boundary
 
@@ -19,7 +19,7 @@ boundary of the reusable core package. If you need the internal architecture of
 - migration workflow and UID helpers
 - pytest integration for `.cypher` graph checks
 
-`ontoplexus` owns the reusable substrate underneath those workflows:
+`ontoplexis` owns the reusable substrate underneath those workflows:
 
 - OWL 2 construct models
 - projection graph compilation and traversal
@@ -40,22 +40,22 @@ CLI process concerns such as logging setup and dotenv loading.
 
 Operator-facing command handlers. These modules may own light workflow
 orchestration for a command, but they should stay close to the CLI boundary:
-parse options, validate inputs, call `ontoplexus` or `ontopoiesis` workflow
+parse options, validate inputs, call `ontoplexis` or `ontopoiesis` workflow
 helpers, and format operator output. They should not absorb reusable graph or
 model logic.
 
 ### `ontopoiesis.render`
 
 Presentation-oriented graph rendering. It accepts projection slices or related
-render-ready inputs from `ontoplexus.graph` and produces SVG, PNG, DOT, and
-related layout output. Rendering policy belongs here, not in `ontoplexus`.
+render-ready inputs from `ontoplexis.graph` and produces SVG, PNG, DOT, and
+related layout output. Rendering policy belongs here, not in `ontoplexis`.
 
 ### `ontopoiesis.lint`
 
 Cypher-based structural lint packaging. This module owns built-in rule
 registries, rule selection, and execution against an existing `.lbug`
 projection. The rules are an operator workflow concern, so they belong here
-rather than in `ontoplexus`.
+rather than in `ontoplexis`.
 
 ### `ontopoiesis.cypher_test`
 
@@ -79,4 +79,4 @@ the projection store, not the underlying graph storage implementation itself.
 - Hosted product concerns
 
 If a new capability would be valuable without the CLI, it probably belongs in
-`ontoplexus`, not here.
+`ontoplexis`, not here.

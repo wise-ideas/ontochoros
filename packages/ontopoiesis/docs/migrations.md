@@ -31,11 +31,10 @@ filename, so comments are just comments. The runner renders each file through th
 Jinja environment before execution, so you can use template helpers and shared macros
 directly inside migration scripts.
 
-Relationships carry a `role` property naming the construct model field
-(e.g. `sub_class_expression`, `individual`, `axioms`), and ordered list fields such as
-`Ontology.axioms` carry explicit `endpoint_order`.
-All constructs live in the single node table `N` and all semantic references in the
-single relationship table `E`.
+Relationships carry a `role` property naming the structural field
+(e.g. `sub`, `super`, `individual`, `axiom`) and a `position` giving the child's
+zero-based order under its parent. All constructs live in the single node table `N` and
+all semantic references in the single relationship table `E`.
 
 ## Worked example: Margherita pizza
 
@@ -94,8 +93,8 @@ Applied V0002
 Applied V0003
 Applied V0004
 ╭─ Migrate Complete ─╮
-│ nodes  34          │
-│ edges  56          │
+│ nodes  33          │
+│ edges  55          │
 ╰────────────────────╯
 ```
 
@@ -115,11 +114,11 @@ ontopoiesis migrate migrations/ --output pizza.lbug
 ontopoiesis export pizza.lbug --output pizza_rebuilt.owlxml
 ```
 
-This example makes the document wrapper explicit by creating `OntologyDocument` and
+This example makes the document root explicit by creating the `Ontology` node and its
 `Prefix` constructs in `V0001`.
 
 For the content-addressing model that makes migration `MERGE` operations idempotent,
-see [The Projection Graph Model](cypher-model.md#the-uid-and-content-addressing).
+see [The Projection Graph Model](cypher-model.md#the-uid).
 
 ## Extending the ontology
 
@@ -133,8 +132,8 @@ Add `V0005__pizza_toppings.cypher`:
 {%- set topping_uid = scalar_uid("Class", "https://example.org/PizzaTopping") -%}
 {%- set pizza_uid = scalar_uid("Class", "https://example.org/Pizza") -%}
 {%- set ax_uid = axiom_uid("SubClassOf", [
-    ("sub_class_expression", topping_uid),
-    ("super_class_expression", pizza_uid)
+    ("sub", topping_uid),
+    ("super", pizza_uid)
 ]) -%}
 
 MERGE (topping:N {uid: "<< topping_uid >>"})
@@ -143,8 +142,8 @@ MERGE (pizza:N {uid: "<< pizza_uid >>"})
   SET pizza.kind = "Class", pizza.iri = "https://example.org/Pizza";
 MERGE (ax:N {uid: "<< ax_uid >>"})
   SET ax.kind = "SubClassOf";
-MERGE (ax)-[:E {role: "sub_class_expression"}]->(topping);
-MERGE (ax)-[:E {role: "super_class_expression"}]->(pizza);
+MERGE (ax)-[:E {role: "sub"}]->(topping);
+MERGE (ax)-[:E {role: "super"}]->(pizza);
 ```
 
 Then re-run the directory against the existing projection:
@@ -199,18 +198,18 @@ the ordered list of `(role, child_uid)` pairs that describe its structure:
 {%- set person_uid = scalar_uid("Class", "http://example.org/Person") -%}
 {%- set animal_uid = scalar_uid("Class", "http://example.org/Animal") -%}
 {%- set ax_uid = axiom_uid("SubClassOf", [
-    ("sub_class_expression", person_uid),
-    ("super_class_expression", animal_uid)
+    ("sub", person_uid),
+    ("super", animal_uid)
 ]) -%}
 MERGE (ax:N {uid: "<< ax_uid >>"}) SET ax.kind = "SubClassOf";
 MERGE (p:N {uid: "<< person_uid >>"}) SET p.kind = "Class", p.iri = "http://example.org/Person";
 MERGE (a:N {uid: "<< animal_uid >>"}) SET a.kind = "Class", a.iri = "http://example.org/Animal";
-MERGE (ax)-[:E {role: "sub_class_expression"}]->(p);
-MERGE (ax)-[:E {role: "super_class_expression"}]->(a);
+MERGE (ax)-[:E {role: "sub"}]->(p);
+MERGE (ax)-[:E {role: "super"}]->(a);
 ```
 
-The role names in `axiom_uid` must match the OWL 2 structural field names used as
-`role` values on projection edges. See the
+The role names in `axiom_uid` must match the `role` values used on projection edges
+(`sub`, `super`, `operand`, …). See the
 [constructs reference](constructs.md#structural-edge-roles) for the full list.
 
 ### Constraints

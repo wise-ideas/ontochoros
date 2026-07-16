@@ -44,12 +44,13 @@ uv run ontopoiesis build goslim_generic.owlxml -o goslim_generic.lbug
 ```
 Wrote goslim_generic.lbug
 ╭─ Build Complete ─╮
-│ nodes  4,670     │
-│ edges  7,923     │
+│   nodes  5,064   │
+│   edges  11,367  │
+│ derived  2,363   │
 ╰──────────────────╯
 ```
 
-4,670 nodes and 7,923 edges — one reusable artifact for every workflow that follows.
+5,064 nodes and 11,367 edges — one reusable artifact for every workflow that follows.
 
 ## 2. What is in the projection
 
@@ -69,21 +70,20 @@ Count terms by GO namespace:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.geneontology.org/formats/oboInOwl#hasOBONamespace'}),
-      (ax)-[:E {role: 'annotation_value'}]->(val:N)
-WHERE ax.annotation_subject IS NOT NULL
-RETURN COALESCE(val.quoted_string, val.lexical_form) AS namespace,
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.geneontology.org/formats/oboInOwl#hasOBONamespace'}),
+      (ax)-[:E {role: 'value'}]->(val:N)
+RETURN val.text AS namespace,
        count(*) AS term_count
 ORDER BY namespace"
 ```
 
 ```
-  namespace               term_count
+  namespace             term_count
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  "biological_process"    72
-  "cellular_component"    28
-  "external"              11
-  "molecular_function"    40
+  biological_process    72
+  cellular_component    28
+  external              11
+  molecular_function    40
 ```
 
 ## 3. Labels, definitions, and synonyms
@@ -93,16 +93,16 @@ Retrieve labels and textual definitions (IAO:0000115) for GO terms:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (label_ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
-      (label_ax)-[:E {role: 'annotation_value'}]->(label_val:N),
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
+      (label_ax)-[:E {role: 'subject'}]->(subj:N),
+      (label_ax)-[:E {role: 'value'}]->(label_val:N),
       (def_ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://purl.obolibrary.org/obo/IAO_0000115'}),
-      (def_ax)-[:E {role: 'annotation_value'}]->(def_val:N)
-WHERE label_ax.annotation_subject = def_ax.annotation_subject
-  AND label_ax.annotation_subject IS NOT NULL
-RETURN label_ax.annotation_subject AS iri,
-       COALESCE(label_val.quoted_string, label_val.lexical_form) AS label,
-       COALESCE(def_val.quoted_string, def_val.lexical_form) AS definition
+      -[:E {role: 'property'}]->(:N {iri: 'http://purl.obolibrary.org/obo/IAO_0000115'}),
+      (def_ax)-[:E {role: 'subject'}]->(subj),
+      (def_ax)-[:E {role: 'value'}]->(def_val:N)
+RETURN subj.text AS iri,
+       label_val.text AS label,
+       def_val.text AS definition
 ORDER BY label
 LIMIT 5"
 ```
@@ -112,28 +112,30 @@ Find terms with exact synonyms — common in biomedical ontologies:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (label_ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
-      (label_ax)-[:E {role: 'annotation_value'}]->(label_val:N),
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
+      (label_ax)-[:E {role: 'subject'}]->(subj:N),
+      (label_ax)-[:E {role: 'value'}]->(label_val:N),
       (syn_ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym'}),
-      (syn_ax)-[:E {role: 'annotation_value'}]->(syn_val:N)
-WHERE label_ax.annotation_subject = syn_ax.annotation_subject
-  AND label_ax.annotation_subject IS NOT NULL
-RETURN COALESCE(label_val.quoted_string, label_val.lexical_form) AS label,
-       COALESCE(syn_val.quoted_string, syn_val.lexical_form) AS synonym
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym'}),
+      (syn_ax)-[:E {role: 'subject'}]->(subj),
+      (syn_ax)-[:E {role: 'value'}]->(syn_val:N)
+RETURN label_val.text AS label,
+       syn_val.text AS synonym
 ORDER BY label
 LIMIT 8"
 ```
 
 ```
-  label                            synonym
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  "ATP-dependent activity"         "ATPase activity"
-  "ATP-dependent activity"         "ATPase activity, coupled"
-  "ATP-dependent activity"         "ATP hydrolysis-dependent activity"
-  "DNA-templated transcription"    "transcription, DNA-dependent"
-  "DNA-templated transcription"    "DNA-dependent transcription"
-  "Golgi apparatus"                "Golgi complex"
+  label                         synonym
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ATP-dependent activity        ATPase-dependent activity
+  ATP-dependent activity        ATPase activity, coupled
+  ATP-dependent activity        ATPase activity
+  ATP-dependent activity        ATP hydrolysis-dependent activity
+  DNA-templated transcription   transcription, DNA-templated
+  DNA-templated transcription   transcription, DNA-dependent
+  DNA-templated transcription   DNA-dependent transcription
+  Golgi apparatus               Golgi complex
 ```
 
 ## 4. Subclass hierarchy and existential restrictions
@@ -143,8 +145,8 @@ Named subclass relationships in the slim:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(sub:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(sup:N {kind: 'Class'})
+      -[:E {role: 'sub'}]->(sub:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(sup:N {kind: 'Class'})
 WHERE sub.iri IS NOT NULL AND sup.iri IS NOT NULL
 RETURN sub.iri AS subclass, sup.iri AS superclass
 ORDER BY superclass, subclass"
@@ -156,15 +158,16 @@ Find which GO slim classes use them:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (label_ax:N {kind: 'AnnotationAssertion'})
-      -[:E {role: 'annotation_property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
-      (label_ax)-[:E {role: 'annotation_value'}]->(label_val:N),
+      -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),
+      (label_ax)-[:E {role: 'subject'}]->(subj:N),
+      (label_ax)-[:E {role: 'value'}]->(label_val:N),
       (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(sub:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(prop:N)
+      -[:E {role: 'sub'}]->(sub:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(prop:N)
 WHERE sub.iri IS NOT NULL AND prop.iri IS NOT NULL
-  AND label_ax.annotation_subject = sub.iri
-RETURN COALESCE(label_val.quoted_string, label_val.lexical_form) AS class,
+  AND subj.text = sub.iri
+RETURN label_val.text AS class,
        prop.iri AS via_property
 ORDER BY class"
 ```
@@ -177,11 +180,11 @@ implies `part_of`, and `part_of o is_a` implies `part_of`. Query them directly:
 ```bash
 uv run ontopoiesis query goslim_generic.lbug -q "
 MATCH (ax:N {kind: 'SubObjectPropertyOf'})
-      -[:E {role: 'super_object_property_expression'}]->(sup:N),
-      (ax)-[:E {role: 'sub_object_property_expression'}]->(:N {kind: 'ObjectPropertyChain'})
-      -[link:E {role: 'object_property_expressions'}]->(step:N)
+      -[:E {role: 'super'}]->(sup:N),
+      (ax)-[:E {role: 'sub'}]->(:N {kind: 'ObjectPropertyChain'})
+      -[link:E {role: 'operand'}]->(step:N)
 WHERE sup.iri IS NOT NULL AND step.iri IS NOT NULL
-RETURN sup.iri AS property, step.iri AS chain_step, link.endpoint_order AS position
+RETURN sup.iri AS property, step.iri AS chain_step, link.position AS position
 ORDER BY property, position"
 ```
 
@@ -209,7 +212,11 @@ WARN warn_labeled_without_definition.cypher
 WARN warn_ontology_no_metadata_annotations.cypher
   query returned 1 violation row(s)
 
-========================= 25 passed, 3 warned in 3.40s =========================
+╭─ Lint Complete ─╮
+│    rules  28    │
+│ failures  0     │
+│ warnings  3     │
+╰─────────────────╯
 ```
 
 40 entities in the slim do not have `rdfs:label` — these are predominantly imported
@@ -218,31 +225,33 @@ terms whose labels live in the parent ontology. 33 labeled terms lack a definiti
 
 ## 7. Impact analysis
 
-Trace which top-level axiom structure references a specific GO term — here, `GO:0006281`
-(DNA repair):
+Trace which constructs reference a specific GO term — here, `GO:0000228`
+(nuclear chromosome):
 
 ```bash
 uv run ontopoiesis impact upstream goslim_generic.lbug \
-  --iri http://purl.obolibrary.org/obo/GO_0006281
+  --iri http://purl.obolibrary.org/obo/GO_0000228
 ```
 
-The result shows every construct that references this term. On the GO slim, `GO:0006281`
-appears directly in a `SubClassOf` axiom that itself connects back through the `Ontology`
-and `OntologyDocument` wrappers:
+The result shows every construct that references this term, walking back to the
+`Ontology` root:
 
 ```
-  kind                   iri                                             uid    depth
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Class                  http://purl.obolibrary.org/obo/GO_0006281      ...    1
-  SubClassOf             None                                            ...    2
-  Ontology               http://purl.obolibrary.org/obo/go/subsets/…    ...    3
-  OntologyDocument       None                                            ...    4
+  uid    kind                depth   iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  n15    Declaration         1       None
+  n447   EquivalentClasses   1       None
+  n450   SubClassOf          1       None
+  n451   SubClassOf          1       None
+  n0     Ontology            2       None
 ```
 
-Depth 1 is the class node itself; depth 2 is the `SubClassOf` axiom that references it;
-depth 3 and 4 are the document-level wrapper nodes reachable from that axiom. The
-`OntologyDocument` row at the deepest level confirms that `GO:0006281` is referenced
-through the ontology's axiom structure rather than being an isolated declaration.
+Depth 1 collects the constructs that mention the term directly — its `Declaration`, an
+`EquivalentClasses` definition, and two `SubClassOf` axioms; depth 2 is the `Ontology`
+root those axioms hang from. That the term appears in axioms beyond its own `Declaration`
+confirms it is referenced through the ontology's structure, not just declared. (`uid`
+values are assigned in document order and are not stable across rebuilds; the current
+model has no separate `OntologyDocument` wrapper — `Ontology` is the root.)
 
 On the full GO release, the same command returns more targeted results — specific
 higher-level process terms that structurally depend on DNA repair through the class
@@ -268,7 +277,7 @@ or accept that editorial lint rules flag those terms as missing labels.
 
 ## Scale note
 
-The queries and lint runs above complete in a few seconds on a 4,670-node, 7,923-edge
+The queries and lint runs above complete in a few seconds on a 5,064-node, 11,367-edge
 projection. Ontopoiesis builds the projection once and reuses it across every command without
 re-parsing the source OWL document.
 

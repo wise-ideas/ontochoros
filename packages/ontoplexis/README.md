@@ -15,9 +15,11 @@ Ladybug graph   ──(the inverse walker)──▶  OWL/XML
 ```
 
 Ontoplexis owns the OWL/XML-to-graph mapping, embedded graph storage, Cypher
-access, and OWL/XML round trips. It does not provide typed Python classes for
-OWL axioms, format conversion, reasoning, profile checking, or an RDF triple
-view.
+access, and OWL/XML round trips. Alongside the structural graph it maintains a
+derived-edge table that exposes the common binary relations (subsumption,
+typing, labels, …) as one-hop edges — a refreshable cache over asserted
+structure, not inference. It does not provide typed Python classes for OWL
+axioms, format conversion, reasoning, or profile checking.
 
 ## Relationship to the stack
 
@@ -48,11 +50,15 @@ from ontoplexis import Ontology
 ont = Ontology.from_owlxml(Path("pizza.owx").read_text())
 
 with ont.project() as proj:
+    # Derived one-hop edges for the common relations …
     rows = proj.execute(
-        "MATCH (a:N)<-[:E {role: 'sub'}]-(:N {kind: 'SubClassOf'})"
-        "-[:E {role: 'super'}]->(b:N) "
-        "WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL "
+        "MATCH (a:N)-[:D {relation: 'subclass_of'}]->(b:N) "
         "RETURN a.iri AS sub_iri, b.iri AS super_iri"
+    )
+    # … and the full structural graph when you need every construct.
+    axioms = proj.execute(
+        "MATCH (ax:N)-[:E]->(:N {iri: 'https://example.org/pizza#Margherita'}) "
+        "RETURN DISTINCT ax.kind AS kind"
     )
 
 print(ont.to_owlxml())   # lossless round trip

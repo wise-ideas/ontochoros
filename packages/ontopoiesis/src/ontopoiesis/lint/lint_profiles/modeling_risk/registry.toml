@@ -1,13 +1,7 @@
 [[rules]]
 code = "M101"
-file = "warn_subclass_cycle_direct.cypher"
-summary = "Direct subclass cycle that collapses classes into an equivalence set."
-severity = "warn"
-
-[[rules]]
-code = "M102"
-file = "warn_subclass_cycle_indirect.cypher"
-summary = "Indirect subclass cycle that collapses classes into an equivalence set."
+file = "warn_subclass_cycle.cypher"
+summary = "Subclass cycle (length 2–5) that collapses classes into an equivalence set."
 severity = "warn"
 
 [[rules]]

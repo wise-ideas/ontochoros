@@ -36,7 +36,37 @@ proj.execute(
 )
 ```
 
-## Common patterns
+## Start with derived edges
+
+The common binary relations are materialized as one-hop edges in the derived
+table `D` (see [Derived Relations](../reference/derived.md)), so most everyday
+queries never touch an axiom node:
+
+```cypher
+MATCH (a:N)-[:D {relation:'subclass_of'}]->(b:N)
+RETURN a.iri AS sub_iri, b.iri AS super_iri
+```
+
+Labels:
+
+```cypher
+MATCH (s:N)-[a:D {relation:'annotation_value'}]->(v:N)
+WHERE a.property = 'http://www.w3.org/2000/01/rdf-schema#label'
+RETURN s.iri AS subject_iri, v.text AS label, v.lang AS lang
+```
+
+Ancestors at any depth (bounded traversal — no closure is materialized):
+
+```cypher
+MATCH (c:N {iri: $iri})-[:D*1..20 {relation:'subclass_of'}]->(a:N)
+RETURN DISTINCT a.iri AS ancestor
+```
+
+## Structural patterns
+
+Anything not covered by a derived relation — anonymous class expressions,
+axiom annotations, argument order — is queried through the full structural
+graph.
 
 Direct subclass pairs:
 
@@ -56,7 +86,7 @@ RETURN DISTINCT user.kind AS kind, user.uid AS uid
 Labels:
 
 ```cypher
-MATCH (aa:N {kind:'AnnotationAssertion'})-[:E {role:'property'}]->(:N {abbreviated_iri:'rdfs:label'}),
+MATCH (aa:N {kind:'AnnotationAssertion'})-[:E {role:'property'}]->(:N {iri:'http://www.w3.org/2000/01/rdf-schema#label'}),
       (aa)-[:E {role:'subject'}]->(s:N),
       (aa)-[:E {role:'value'}]->(v:N {kind:'Literal'})
 RETURN s.text AS subject_iri, v.text AS label, v.lang AS lang

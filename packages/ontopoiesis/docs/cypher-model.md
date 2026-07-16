@@ -31,7 +31,8 @@ Every node in `N` carries:
 
 - `kind` — the OWL 2 construct name, taken directly from the structural specification
   (e.g., `SubClassOf`, `EquivalentClasses`, `ObjectSomeValuesFrom`)
-- `uid` — a stable content-addressed identifier for this node within a projection
+- `uid` — a within-projection id, assigned in document order (`n0`, `n1`, …); not stable
+  across rebuilds
 
 Named entities (classes, properties, individuals, datatypes) also carry:
 
@@ -40,17 +41,14 @@ Named entities (classes, properties, individuals, datatypes) also carry:
 Axioms and anonymous constructs have no `iri`. You identify them by `kind` and navigate
 to their participants via edges.
 
-Literal nodes (`StringLiteralNoLanguage`, `StringLiteralWithLanguage`, `TypedLiteral`)
-carry additional properties depending on their form:
+Literal values are a single node kind, `Literal`, carrying:
 
-- `quoted_string` — the string value for `StringLiteralNoLanguage` and
-  `StringLiteralWithLanguage`
-- `language_tag` — the language tag for `StringLiteralWithLanguage` (e.g. `'en'`)
-- `lexical_form` — the lexical value for `TypedLiteral`
-- `datatype_iri` — the datatype IRI for `TypedLiteral`
+- `text` — the lexical value (`"Dog"`, `"42"`)
+- `lang` — the language tag when present (`'en'`), otherwise null
+- `datatype_iri` — the datatype IRI when the literal is typed
 
-Use `COALESCE(val.quoted_string, val.lexical_form)` when you want the string value
-regardless of literal type.
+So the string value is just `val.text`, regardless of whether the literal is plain,
+language-tagged, or typed.
 
 Some construct types carry additional properties beyond `kind` and `uid`. See the
 [constructs reference](constructs.md#node-and-edge-properties) for a complete listing.
@@ -58,26 +56,46 @@ Some construct types carry additional properties beyond `kind` and `uid`. See th
 ## The E table
 
 Every edge in `E` carries a `role` property that names the structural field it
-represents. Role names come directly from the OWL 2 structural specification field
-names:
+represents. Roles are short, query-facing names assigned from the parent construct's
+kind and the child's position among its arguments:
 
-| Example role                 | What it represents                                     |
-| ---------------------------- | ------------------------------------------------------ |
-| `sub_class_expression`       | The subclass side of a `SubClassOf`                    |
-| `super_class_expression`     | The superclass side of a `SubClassOf`                  |
-| `class_expressions`          | Members of an `EquivalentClasses` or `DisjointClasses` |
-| `object_property_expression` | The property in an `ObjectSomeValuesFrom`              |
-| `class_expression`           | The filler in an `ObjectSomeValuesFrom`                |
-| `annotation_property`        | The property in an `AnnotationAssertion`               |
-| `annotation_value`           | The value in an `AnnotationAssertion`                  |
+| Example role | What it represents                                     |
+| ------------ | ------------------------------------------------------ |
+| `sub`        | The subclass side of a `SubClassOf`                    |
+| `super`      | The superclass side of a `SubClassOf`                  |
+| `operand`    | Members of an `EquivalentClasses` or `DisjointClasses` |
+| `property`   | The property in an `ObjectSomeValuesFrom` or assertion |
+| `filler`     | The filler in an `ObjectSomeValuesFrom`                |
+| `subject`    | The subject of an `AnnotationAssertion` or assertion   |
+| `value`      | The value in an `AnnotationAssertion`                  |
 
-If you know the OWL 2 structural specification field name for a construct, you already
-know the `role` value to use in a query. The projection is not a re-encoding; it is a
-direct graph representation of the same structure the spec defines.
+The full role vocabulary — every construct and the roles it uses — is the
+[Ontoplexis edge-roles reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/roles/),
+mirrored per construct in the [constructs reference](constructs.md#structural-edge-roles).
+Roles are decoration; the property that actually round-trips is `position`.
 
-Edges on ordered list fields also carry `endpoint_order` — a one-based integer giving
-the position of this edge in the ordered list. Property chain steps, disjoint union
-members, and ontology-level axiom sequences use `endpoint_order`.
+Every edge also carries `position` — the child's zero-based index in document order
+under its parent. It is what preserves ordered fields (property chain steps, ontology
+axiom order) and what serialization uses to reconstruct the document. Query it to
+recover the order of an ordered list.
+
+## The D table
+
+A third table, `D`, holds **derived edges**: the common binary relations
+(`subclass_of`, `type`, `domain`, `range`, `annotation_value`, …) mechanically
+collapsed from the structural graph so they are one hop instead of a walk
+through an axiom node. Each edge carries a `relation` name, plus `property`
+and `quantifier` where the relation needs them.
+
+```cypher
+MATCH (a:N)-[:D {relation: 'subclass_of'}]->(b:N)
+RETURN a.iri AS sub_iri, b.iri AS super_iri
+```
+
+`D` is a refreshable cache over `N`/`E` — asserted structure only, no
+reasoning — and is rebuilt by `ontopoiesis build` and `ontopoiesis migrate`.
+Export and diff never read it. The relation vocabulary is documented in the
+[Ontoplexis derived-relations reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/).
 
 ## Why this shape helps
 
@@ -88,10 +106,10 @@ triples to recover a restriction. In Ontopoiesis, the restriction is a node:
 
 ```cypher
 MATCH (ax:N {kind: 'SubClassOf'})
-      -[:E {role: 'sub_class_expression'}]->(sub:N {kind: 'Class'}),
-      (ax)-[:E {role: 'super_class_expression'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(prop:N),
-      (restriction)-[:E {role: 'class_expression'}]->(filler:N)
+      -[:E {role: 'sub'}]->(sub:N {kind: 'Class'}),
+      (ax)-[:E {role: 'super'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(prop:N),
+      (restriction)-[:E {role: 'filler'}]->(filler:N)
 WHERE sub.iri IS NOT NULL AND prop.iri IS NOT NULL
 RETURN sub.iri AS class, prop.iri AS property,
        COALESCE(filler.iri, filler.kind) AS filler
@@ -99,13 +117,12 @@ ORDER BY class, property
 ```
 
 **N-ary axioms are flat fan-outs.** An `EquivalentClasses` axiom with three members has
-three edges from the axiom node, all with role `class_expressions`. An
-`ObjectIntersectionOf` with four operands has four edges with role `operands`. No
-membership list structure to unwrap:
+three edges from the axiom node, all with role `operand`. An `ObjectIntersectionOf` with
+four operands has four edges with role `operand`. No membership list structure to unwrap:
 
 ```cypher
 MATCH (ax:N {kind: 'DisjointClasses'})
-      -[:E {role: 'class_expressions'}]->(cls:N)
+      -[:E {role: 'operand'}]->(cls:N)
 WHERE cls.iri IS NOT NULL
 RETURN ax.uid AS axiom, cls.iri AS class
 ORDER BY axiom, class
@@ -116,32 +133,26 @@ multiple axiom boundaries is just a graph traversal. Finding classes that appear
 as the subject of an existential restriction and as a disjoint class member is a single
 connected match, not a join between SPARQL subqueries.
 
-## The `uid` and content-addressing
+## The `uid`
 
-Every node in the projection carries a `uid` — a content-addressed key derived from the
-structural identity of the construct.
+Every node in the projection carries a `uid`. On a `build`, the parser assigns UIDs as
+sequential ids in document order (`n0`, `n1`, and so on). Named entities and leaf values
+are deduplicated: two axioms referencing the same class share one node and therefore one
+`uid`. But the ids are positional, not content-derived, so **`uid` values are not stable
+across rebuilds** — traversal order, and therefore the numbers, can differ from build to
+build. Use `iri` for named entities as your durable identifier; treat `uid` as a
+within-projection handle only.
 
-Within a single ingestion run, the parser assigns UIDs as sequential integers in traversal
-order (`0x1`, `0x2`, and so on). The projection deduplicates shared structure: two axioms
-referencing the same class expression share a node and therefore the same UID. But the
-same axiom deserialized from two different documents will carry different sequential UIDs,
-because traversal order can differ.
+Because uids are not stable, `ontopoiesis diff` does not compare them. It fingerprints
+each construct structurally over the graph, so "changed" does not exist at the axiom
+level: if `SubClassOf(:A :B)` becomes `SubClassOf(:A :C)`, the first fingerprint
+disappears (removed) and a new one appears (added) — two genuinely distinct OWL axioms.
 
-This is why content-addressing matters: **the UID of a construct depends only on its
-structural content**, not on traversal order. Rebuilding the same OWL/XML ontology assigns
-the same `uid` to the same construct regardless of prefix declarations or element ordering.
-
-`ontopoiesis diff` uses the same scheme for fingerprinting. At the axiom level, "changed"
-does not exist as a concept:
-if `SubClassOf(:A :B)` becomes `SubClassOf(:A :C)`, the first fingerprint disappears
-(removed) and a new one appears (added). No in-place modification occurs — the two
-are genuinely distinct OWL axioms, each with its own content-addressed key.
-
-The `uid` is stable within a single projection run but recomputed on rebuild. Do not
-store `uid` values as durable external identifiers; use `iri` for named entities instead.
-The same content-addressing model underlies the migration workflow — see
-[Migrations](migrations.md) for how it is used for `MERGE` idempotence in versioned
-Cypher scripts.
+Migrations need the opposite property — a **deterministic** id so that re-running a script
+`MERGE`s the existing node instead of duplicating it. They get it from the
+`scalar_uid`/`axiom_uid` template helpers, which content-address a construct from its kind
+and structure into a stable `0x`-prefixed digest. That is a separate, migration-only
+scheme from the sequential build-time uids; see [Migrations](migrations.md).
 
 ## What is not in the projection
 

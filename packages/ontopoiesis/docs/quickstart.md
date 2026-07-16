@@ -33,7 +33,7 @@ Start with the bundled family ontology:
 uv run ontopoiesis build docs/family.owlxml -o /tmp/family.lbug
 ```
 
-On the current sample this produces a small graph projection with 42 nodes and 51 edges.
+On the current sample this produces a small graph projection with 47 nodes and 63 edges.
 
 What this gives you:
 
@@ -62,9 +62,9 @@ Then ask a more structural question:
 ```bash
 uv run ontopoiesis query /tmp/family.lbug -q "
 MATCH (ax:N {kind: 'EquivalentClasses'})
-      -[:E {role: 'class_expressions'}]->(cls:N {kind: 'Class'}),
-      (ax)-[:E {role: 'class_expressions'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
-      -[:E {role: 'object_property_expression'}]->(:N {iri: 'http://example.org/hasChild'})
+      -[:E {role: 'operand'}]->(cls:N {kind: 'Class'}),
+      (ax)-[:E {role: 'operand'}]->(restriction:N {kind: 'ObjectSomeValuesFrom'})
+      -[:E {role: 'property'}]->(:N {iri: 'http://example.org/hasChild'})
 RETURN cls.iri AS class
 ORDER BY class"
 ```
@@ -85,7 +85,12 @@ uv run ontopoiesis lint /tmp/family.lbug
 On the current bundled sample, the baseline passes cleanly:
 
 ```
-============================== 20 passed in 3.23s ==============================
+No lint violations found.
+╭─ Lint Complete ─╮
+│    rules  20    │
+│ failures  0     │
+│ warnings  0     │
+╰─────────────────╯
 ```
 
 What this shows:
@@ -114,24 +119,18 @@ declaration and subclass axiom. The diff reports semantic additions — not sour
 formatting differences:
 
 ```
-  status    kind               iri                  count   fingerprint
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  added     Class              https://example.o…   1       12b8fa4cb1…
-  added     Declaration                             1       06687a17eb…
-  added     Ontology           https://example.o…   1       a41528263…
-  removed   Ontology           https://example.o…   1       acd30cd6e…
-  added     OntologyDocument                        1       54cc71a614…
-  removed   OntologyDocument                        1       f2753147d0…
-  added     SubClassOf                              1       bebaa40a77…
+  status   kind          iri             count   fingerprint    ontology_iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  added    Declaration   https://exam…   1       5ca795dc1e95   https://examp…
+  added    SubClassOf    https://exam…   1       1a64b124791c   https://examp…
 ```
 
-The `Ontology` and `OntologyDocument` nodes appear because adding a class changes the
-axiom list fingerprint.
-
-The seven rows confirm that `pizza_v2` added three new constructs (the
-`SicilianPizza` class, its declaration, and its subclass axiom) and that the
-`Ontology` and `OntologyDocument` fingerprints changed as a side effect. If the diff
-output is empty, the two projections were built from the same source file.
+The two rows are the `Declaration` of the new `SicilianPizza` class (the added class
+entity is represented by its declaration axiom) and the new `SubClassOf` axiom that
+places it under `Pizza`. The diff fingerprints constructs structurally, so unchanged
+axioms and the ontology wrapper produce no rows — only genuine additions and removals
+appear. If the diff output is empty, the two projections were built from the same source
+file.
 
 This is useful because Ontopoiesis is diffing OWL constructs in the projection, not source
 file formatting.
@@ -144,26 +143,24 @@ Use impact analysis against the family projection:
 uv run ontopoiesis impact upstream /tmp/family.lbug --iri http://example.org/hasChild
 ```
 
-On this tiny sample, the upstream result includes the path from direct referrers back to
-the ontology document wrapper:
+On this tiny sample, the upstream result walks from the constructs that reference
+`hasChild` back to the `Ontology` root:
 
 ```
-  kind                         iri    uid    depth
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ObjectProperty               ...    ...    1
-  ObjectPropertyDomain         None   ...    2
-  ObjectPropertyRange          None   ...    2
-  Ontology                     ...    ...    3
-  OntologyDocument             None   ...    4
+  uid   kind                   depth   iri
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  n23   Declaration            1       None
+  n40   ObjectSomeValuesFrom   1       None
+  n39   EquivalentClasses      2       None
+  n0    Ontology               2       None
 ```
 
 That confirms that `hasChild` appears in ontology content through semantic references,
-not ad hoc text search.
-
-The four rows at depths 2–4 confirm that `hasChild` is not just a declaration but is
-actively used in ontology content — it appears in domain and range axioms that are
-themselves wrapped by the `Ontology` root. An entity with no upstream references beyond
-its own `Declaration` would appear at depth 1 only.
+not ad hoc text search: besides its own `Declaration`, it is used in the
+`ObjectSomeValuesFrom` restriction that defines `Parent` (`Parent ≡ ∃ hasChild.Person`),
+which the `EquivalentClasses` axiom and the `Ontology` root reach in turn. An entity used
+only in its own `Declaration` would appear at depth 1 alone. (`uid` values are assigned in
+document order and are not stable across rebuilds.)
 
 On larger ontologies, this same command becomes much more informative, because it helps
 answer “what statements mention this entity?”
@@ -198,9 +195,9 @@ The output should match the kinds listed in step 2.
 from scratch: `ontopoiesis build docs/family.owlxml -o /tmp/family.lbug` and re-run
 `ontopoiesis lint /tmp/family.lbug`.
 
-**Step 4 shows only `Ontology` and `OntologyDocument` rows.** This is expected when the
-two projections are semantically identical except for wrapper fingerprints. If you are
-expecting substantive differences, confirm the two source files differ:
+**Step 4 shows no rows.** This is expected when the two projections are semantically
+identical. If you are expecting substantive differences, confirm the two source files
+differ:
 
 ```bash
 diff docs/pizza.owlxml docs/pizza_v2.owlxml

@@ -466,6 +466,9 @@ def test_migrate_cli_runs_and_writes_projection(
         def __enter__(self):
             return self
 
+        def refresh_derived_edges(self) -> None:
+            pass
+
         def __exit__(self, *_args: object) -> None:
             seen["closed"] = True
 
@@ -538,6 +541,9 @@ def test_migrate_cli_uses_default_lbug_output_path(
         def __enter__(self):
             return self
 
+        def refresh_derived_edges(self) -> None:
+            pass
+
         def __exit__(self, *_args: object) -> None:
             return None
 
@@ -603,6 +609,9 @@ def test_migrate_cli_resumes_existing_projection(
         def __enter__(self):
             return self
 
+        def refresh_derived_edges(self) -> None:
+            pass
+
         def __exit__(self, *_args: object) -> None:
             return None
 
@@ -643,6 +652,9 @@ def test_migrate_cli_force_rebuilds_existing_output(
 
         def __enter__(self):
             return self
+
+        def refresh_derived_edges(self) -> None:
+            pass
 
         def __exit__(self, *_args: object) -> None:
             return None
@@ -702,6 +714,9 @@ def test_query_cli_executes_cypher_and_prints_rows(
     class _Projection:
         def __enter__(self):
             return self
+
+        def refresh_derived_edges(self) -> None:
+            pass
 
         def __exit__(self, *_args: object) -> None:
             return None
@@ -869,3 +884,115 @@ def test_test_cli_exits_two_when_no_tests_are_found(
     assert "No test_*.cypher, *_test.cypher, warn_*.cypher, or *_warn.cypher files found" in (
         result.output
     )
+
+
+def test_storage_backend_is_never_imported_directly() -> None:
+    """`real_ladybug` is ontoplexis's private storage dependency.
+
+    Ontopoiesis reaches storage only through ontoplexis `Projection` handles;
+    importing the backend here would leak the seam across the package boundary.
+    """
+    from pathlib import Path
+
+    import ontopoiesis
+
+    src = Path(ontopoiesis.__file__).parent
+    offenders = [
+        str(path.relative_to(src))
+        for path in src.rglob("*.py")
+        if "real_ladybug" in path.read_text(encoding="utf-8")
+    ]
+    assert offenders == []
+
+
+# ---------------------------------------------------------------------------
+# convert / reason (the opt-in ROBOT shim)
+# ---------------------------------------------------------------------------
+
+_ROBOT_JAR = Path(__file__).resolve().parents[2] / "ontoplexis" / ".cache" / "robot" / "robot.jar"
+
+_needs_robot = pytest.mark.skipif(
+    not _ROBOT_JAR.is_file(), reason="ROBOT jar not fetched (make fetch-robot)"
+)
+
+_MINI_TTL = """\
+@prefix : <http://example.org/z#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+<http://example.org/z> rdf:type owl:Ontology .
+:A rdf:type owl:Class .
+:B rdf:type owl:Class .
+:C rdf:type owl:Class .
+:A rdfs:subClassOf :B .
+:B rdfs:subClassOf :C .
+"""
+
+
+def test_convert_cli_fails_clearly_without_jar(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("ROBOT_JAR", raising=False)
+    source = tmp_path / "mini.ttl"
+    source.write_text(_MINI_TTL, encoding="utf-8")
+
+    result = _invoke(runner, "convert", str(source))
+
+    assert result.exit_code != 0
+    assert "ROBOT_JAR" in result.output
+
+
+def test_reason_cli_fails_clearly_on_missing_jar_path(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ROBOT_JAR", str(tmp_path / "nowhere.jar"))
+    source = tmp_path / "mini.owx"
+    source.write_text("<Ontology/>", encoding="utf-8")
+
+    result = _invoke(runner, "reason", str(source))
+
+    assert result.exit_code != 0
+    assert "does not exist" in result.output
+
+
+def test_convert_cli_rejects_existing_output_before_needing_the_jar(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("ROBOT_JAR", raising=False)
+    source = tmp_path / "mini.ttl"
+    source.write_text(_MINI_TTL, encoding="utf-8")
+    (tmp_path / "mini.owx").write_text("occupied", encoding="utf-8")
+
+    result = _invoke(runner, "convert", str(source))
+
+    assert result.exit_code != 0
+    assert "--force" in result.output
+
+
+@_needs_robot
+def test_convert_reason_build_pipeline_materializes_inferences(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ontoplexis import Projection
+
+    monkeypatch.setenv("ROBOT_JAR", str(_ROBOT_JAR))
+    source = tmp_path / "mini.ttl"
+    source.write_text(_MINI_TTL, encoding="utf-8")
+
+    assert _invoke(runner, "convert", str(source)).exit_code == 0
+    converted = tmp_path / "mini.owx"
+    assert _invoke(runner, "reason", str(converted), "--include-indirect").exit_code == 0
+    reasoned = tmp_path / "mini.reasoned.owx"
+    # Provenance: inferred axioms are annotated by default.
+    assert "is_inferred" in reasoned.read_text(encoding="utf-8")
+    assert _invoke(runner, "build", str(reasoned)).exit_code == 0
+
+    with Projection.open(tmp_path / "mini.reasoned.lbug") as projection:
+        rows = projection.execute(
+            "MATCH (a:N)-[:D {relation:'subclass_of'}]->(b:N) "
+            "RETURN a.iri AS sub, b.iri AS super ORDER BY sub, super"
+        )
+    pairs = {(row["sub"], row["super"]) for row in rows}
+    # Told: A⊑B, B⊑C. Materialized by ELK with --include-indirect: A⊑C —
+    # one hop like any told axiom.
+    assert ("http://example.org/z#A", "http://example.org/z#C") in pairs

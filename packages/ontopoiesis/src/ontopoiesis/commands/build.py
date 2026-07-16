@@ -29,7 +29,11 @@ def build(
     try:
         node_count = projection.node_count
         edge_count = projection.edge_count
+        derived_count = projection.derived_count
     finally:
         projection.close()
     print_path_action("Wrote", output_path)
-    print_summary("Build Complete", [("nodes", node_count), ("edges", edge_count)])
+    print_summary(
+        "Build Complete",
+        [("nodes", node_count), ("edges", edge_count), ("derived", derived_count)],
+    )

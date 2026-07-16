@@ -314,3 +314,32 @@ def test_undeclared_prefix_is_rejected() -> None:
     )
     with pytest.raises(OwlXmlStructureError, match="undeclared prefix"):
         parse_owlxml(document)
+
+
+def test_doctype_is_rejected() -> None:
+    # OWL/XML never needs a DTD; rejecting DOCTYPE outright closes the
+    # entity-expansion (billion-laughs) and external-entity (XXE) vectors.
+    billion_laughs = (
+        '<?xml version="1.0"?>\n'
+        "<!DOCTYPE Ontology [\n"
+        '  <!ENTITY a "aaaaaaaaaa">\n'
+        '  <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">\n'
+        '  <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">\n'
+        "]>\n"
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#">&c;</Ontology>'
+    )
+    with pytest.raises(OwlXmlStructureError, match="DOCTYPE"):
+        parse_owlxml(billion_laughs)
+
+    xxe = (
+        '<?xml version="1.0"?>\n'
+        '<!DOCTYPE Ontology [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>\n'
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#">&xxe;</Ontology>'
+    )
+    with pytest.raises(OwlXmlStructureError, match="DOCTYPE"):
+        parse_owlxml(xxe)
+
+
+def test_malformed_xml_is_still_reported_as_such() -> None:
+    with pytest.raises(OwlXmlStructureError, match="Not well-formed"):
+        parse_owlxml("<Ontology")

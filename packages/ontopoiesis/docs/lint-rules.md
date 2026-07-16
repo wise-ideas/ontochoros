@@ -12,8 +12,8 @@ and wire it into CI, see the [Lint guide](lint.md).
 | [`E1xx`](#contradictions)      | Default (errors)    | 15    | Contradiction checks               |
 | [`W1xx`](#redundancy-warnings) | Default (warnings)  | 5     | Low-noise universal warnings       |
 | [`P1xx`](#editorial-p)         | `editorial`         | 8     | Publication and editorial guidance |
-| [`M1xx`](#modeling_risk-m)     | `modeling_risk`     | 9     | Modeling-risk guidance             |
-| [`D1xx`](#description_logic-d) | `description_logic` | 4     | OWL 2 DL strictness                |
+| [`M1xx`](#modeling_risk-m)     | `modeling_risk`     | 8     | Modeling-risk guidance             |
+| [`D1xx`](#description_logic-d) | `description_logic` | 5     | OWL 2 DL strictness                |
 
 ## Default Baseline
 
@@ -157,7 +157,9 @@ These rules report low-noise structural cleanup opportunities.
 
 **`W101` `warn_subclass_reflexive`**
 
-`SubClassOf(A, A)` tautologies. Legal OWL, but always redundant.
+`SubClassOf(A, A)` tautologies. Legal OWL, but always redundant. Also fires — deliberately —
+when a `DisjointUnion` lists the union class among its own operands, which derives the same
+self-loop and is the same authoring accident wearing a different axiom.
 
 ```cypher
 --8<-- "src/ontopoiesis/lint/lint/warn_subclass_reflexive.cypher"
@@ -288,24 +290,17 @@ for reuse.
 
 Valid OWL that often deserves explicit review.
 
-**`M101` `warn_subclass_cycle_direct`**
+**`M101` `warn_subclass_cycle`**
 
-Two-node subclass cycles: `A ⊑ B` and `B ⊑ A` both asserted as named subclass axioms.
-Legal OWL 2 (it implies equivalence), but usually an accidental normalization problem
-rather than an intended equivalence declaration.
-
-```cypher
---8<-- "src/ontopoiesis/lint/lint_profiles/modeling_risk/warn_subclass_cycle_direct.cypher"
-```
-
-**`M102` `warn_subclass_cycle_indirect`**
-
-Three-node subclass cycles: `A ⊑ B ⊑ C ⊑ A`. Legal OWL 2, but almost always a
-hierarchy-maintenance error. Two-node cycles are caught by M101; this rule catches
-the next smallest case.
+Subclass cycles: a chain of named classes `A ⊑ B ⊑ … ⊑ A`. Legal OWL 2 (it implies the
+members are equivalent), but almost always an accidental hierarchy-maintenance error
+rather than an intended equivalence. Reports each class that participates in a cycle.
+Cycle length is bounded to 5 using fixed-length patterns over the derived `subclass_of`
+edges: real accidental cycles are short, and unbounded recursive traversal of the whole
+hierarchy is prohibitively slow on large ontologies.
 
 ```cypher
---8<-- "src/ontopoiesis/lint/lint_profiles/modeling_risk/warn_subclass_cycle_indirect.cypher"
+--8<-- "src/ontopoiesis/lint/lint_profiles/modeling_risk/warn_subclass_cycle.cypher"
 ```
 
 **`M103` `warn_object_property_no_domain_or_range`**
@@ -427,4 +422,21 @@ individuals to literals at the same time.
 
 ```cypher
 --8<-- "src/ontopoiesis/lint/lint_profiles/description_logic/test_punning_object_data_property.cypher"
+```
+
+**`D105` `test_disjoint_classes_shared_subclass_transitive`**
+
+A named class that is a subclass — at any depth — of two classes declared disjoint. Such a
+class is unsatisfiable (equivalent to `owl:Nothing`), inheriting from two provably disjoint
+parents. This generalizes the direct check [`E103`](#contradictions) through the derived
+`subclass_of` closure, catching deep unsatisfiabilities a reasoner would flag but a one-hop
+structural check misses. It also covers the degenerate case of a class that is disjoint
+with one of its own ancestors, which the shared-subclass pattern alone cannot match. It
+walks descendants from the (few) disjoint pairs to stay tractable, with depth capped at 20,
+and lives in the opt-in `description_logic` profile
+because the closure walk is heavier than the default baseline. It subsumes `E103`, so
+direct cases also appear here when both are run.
+
+```cypher
+--8<-- "src/ontopoiesis/lint/lint_profiles/description_logic/test_disjoint_classes_shared_subclass_transitive.cypher"
 ```

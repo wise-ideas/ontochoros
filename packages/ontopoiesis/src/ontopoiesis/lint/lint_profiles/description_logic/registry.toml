@@ -22,3 +22,9 @@ file = "test_punning_object_data_property.cypher"
 summary = "IRI reused as both ObjectProperty and DataProperty."
 severity = "error"
 
+[[rules]]
+code = "D105"
+file = "test_disjoint_classes_shared_subclass_transitive.cypher"
+summary = "Class that is a subclass at any depth of two disjoint classes (unsatisfiable)."
+severity = "error"
+

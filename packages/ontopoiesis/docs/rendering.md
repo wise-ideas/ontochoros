@@ -33,7 +33,7 @@ uv run ontopoiesis render /tmp/family.lbug -o /tmp/family.svg
 
 The resulting SVG contains one node per construct in the projection — classes,
 properties, axioms, class expressions — connected by labeled edges named after their
-structural role (e.g., `sub_class_expression`, `object_property_expression`). On the
+structural role (e.g., `sub`, `super`, `property`, `filler`). On the
 bundled family ontology, the graph is small enough to be readable. On larger ontologies,
 the full-graph render is too dense to be useful; entity-focused rendering is more
 practical.
@@ -75,9 +75,9 @@ Each node in the graph represents one OWL 2 construct.
 - **External nodes** appear only with `--include-external`: constructs referenced just
   outside the focal neighborhood
 
-Edge labels are the OWL 2 structural role names, such as `sub_class_expression` and
-`object_property_expression`. These match the `role` values used in Cypher queries; see
-the [constructs reference](constructs.md#structural-edge-roles) for the full list.
+Edge labels are the structural role names, such as `sub`, `super`, and `property`. These
+match the `role` values used in Cypher queries; see the
+[constructs reference](constructs.md#structural-edge-roles) for the full list.
 
 ## PNG Output
 

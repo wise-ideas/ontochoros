@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ontoplexis.derive import DERIVED_TABLE, derive_edges
 from ontoplexis.graph import (
     NODE_TABLE,
     RELATIONSHIP_TABLE,
@@ -68,6 +69,7 @@ class Ontology:
 
 
 __all__ = [
+    "DERIVED_TABLE",
     "Edge",
     "Graph",
     "NODE_TABLE",
@@ -78,4 +80,5 @@ __all__ = [
     "ProjectionStorageError",
     "RELATIONSHIP_TABLE",
     "WritableProjection",
+    "derive_edges",
 ]

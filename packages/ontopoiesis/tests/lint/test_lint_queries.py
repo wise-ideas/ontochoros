@@ -110,52 +110,60 @@ def test_warn_annotation_assertion_unknown_subject_exempts_xsd_builtins() -> Non
     assert rows == []
 
 
-def test_subclass_cycle_indirect_reports_one_row_per_member_set() -> None:
+_CYCLE_RULE = "lint_profiles/modeling_risk/warn_subclass_cycle.cypher"
+
+
+def test_subclass_cycle_reports_every_member_of_a_four_node_cycle() -> None:
     constructs = [
         _c("0x1", "Class", iri="https://example.org#A"),
         _c("0x2", "Class", iri="https://example.org#B"),
         _c("0x3", "Class", iri="https://example.org#C"),
+        _c("0x4", "Class", iri="https://example.org#D"),
+        _c("0x10", "SubClassOf", ["0x1", "0x2"]),
+        _c("0x11", "SubClassOf", ["0x2", "0x3"]),
+        _c("0x12", "SubClassOf", ["0x3", "0x4"]),
+        _c("0x13", "SubClassOf", ["0x4", "0x1"]),
     ]
-    for uid, sub_uid, sup_uid in [
-        ("0x10", "0x1", "0x2"),
-        ("0x11", "0x2", "0x1"),
-        ("0x12", "0x1", "0x3"),
-        ("0x13", "0x3", "0x1"),
-        ("0x14", "0x2", "0x3"),
-        ("0x15", "0x3", "0x2"),
-    ]:
-        constructs.append(_c(uid, "SubClassOf", [sub_uid, sup_uid]))
 
-    rows = _run_query("lint_profiles/modeling_risk/warn_subclass_cycle_indirect.cypher", constructs)
+    rows = _run_query(_CYCLE_RULE, constructs)
 
-    assert rows == [
-        {
-            "class_a": "https://example.org#A",
-            "class_b": "https://example.org#B",
-            "class_c": "https://example.org#C",
-        }
+    # Row order is not guaranteed across UNION branches; membership is what matters.
+    assert sorted(row["iri"] for row in rows) == [
+        "https://example.org#A",
+        "https://example.org#B",
+        "https://example.org#C",
+        "https://example.org#D",
     ]
 
 
-def test_subclass_cycle_indirect_matches_non_sorted_cycle_orientation() -> None:
+def test_subclass_cycle_reports_both_members_of_a_two_node_cycle() -> None:
+    constructs = [
+        _c("0x1", "Class", iri="https://example.org#A"),
+        _c("0x2", "Class", iri="https://example.org#B"),
+        _c("0x10", "SubClassOf", ["0x1", "0x2"]),
+        _c("0x11", "SubClassOf", ["0x2", "0x1"]),
+    ]
+
+    rows = _run_query(_CYCLE_RULE, constructs)
+
+    assert sorted(row["iri"] for row in rows) == [
+        "https://example.org#A",
+        "https://example.org#B",
+    ]
+
+
+def test_subclass_cycle_ignores_an_acyclic_chain() -> None:
     constructs = [
         _c("0x1", "Class", iri="https://example.org#A"),
         _c("0x2", "Class", iri="https://example.org#B"),
         _c("0x3", "Class", iri="https://example.org#C"),
-        _c("0x10", "SubClassOf", ["0x1", "0x3"]),
-        _c("0x11", "SubClassOf", ["0x3", "0x2"]),
-        _c("0x12", "SubClassOf", ["0x2", "0x1"]),
+        _c("0x10", "SubClassOf", ["0x1", "0x2"]),
+        _c("0x11", "SubClassOf", ["0x2", "0x3"]),
     ]
 
-    rows = _run_query("lint_profiles/modeling_risk/warn_subclass_cycle_indirect.cypher", constructs)
+    rows = _run_query(_CYCLE_RULE, constructs)
 
-    assert rows == [
-        {
-            "class_a": "https://example.org#A",
-            "class_b": "https://example.org#B",
-            "class_c": "https://example.org#C",
-        }
-    ]
+    assert rows == []
 
 
 def test_warn_duplicate_label_language_matches_untagged_duplicate_labels() -> None:
@@ -648,17 +656,61 @@ def test_same_different_individual_reports_same_pair() -> None:
     ]
 
 
-def test_subclass_cycle_direct_reports_pair_once() -> None:
+def test_disjoint_shared_subclass_transitive_reports_deep_unsatisfiable_class() -> None:
+    # M ⊑ N ⊑ P and M ⊑ O ⊑ Q with DisjointClasses(P, Q): M is unsatisfiable at depth 2,
+    # which the direct check (E103) misses but the transitive closure rule catches.
+    constructs = [
+        _c("0x1", "Class", iri="https://example.org#M"),
+        _c("0x2", "Class", iri="https://example.org#N"),
+        _c("0x3", "Class", iri="https://example.org#O"),
+        _c("0x4", "Class", iri="https://example.org#P"),
+        _c("0x5", "Class", iri="https://example.org#Q"),
+        _c("0x10", "SubClassOf", ["0x1", "0x2"]),
+        _c("0x11", "SubClassOf", ["0x2", "0x4"]),
+        _c("0x12", "SubClassOf", ["0x1", "0x3"]),
+        _c("0x13", "SubClassOf", ["0x3", "0x5"]),
+        _c("0x14", "DisjointClasses", ["0x4", "0x5"]),
+    ]
+
+    rows = _run_query(
+        "lint_profiles/description_logic/test_disjoint_classes_shared_subclass_transitive.cypher",
+        constructs,
+    )
+
+    assert rows == [
+        {
+            "unsatisfiable_class": "https://example.org#M",
+            "disjoint_a": "https://example.org#P",
+            "disjoint_b": "https://example.org#Q",
+        }
+    ]
+
+
+def test_disjoint_shared_subclass_transitive_reports_class_disjoint_with_own_ancestor() -> None:
+    # A ⊑ B ⊑ C with DisjointClasses(A, C): A is unsatisfiable, but the shared-subclass
+    # branch needs a length >= 1 path to both disjoint classes, so only the degenerate
+    # branch can report it.
     constructs = [
         _c("0x1", "Class", iri="https://example.org#A"),
         _c("0x2", "Class", iri="https://example.org#B"),
+        _c("0x3", "Class", iri="https://example.org#C"),
         _c("0x10", "SubClassOf", ["0x1", "0x2"]),
-        _c("0x11", "SubClassOf", ["0x2", "0x1"]),
+        _c("0x11", "SubClassOf", ["0x2", "0x3"]),
+        _c("0x12", "DisjointClasses", ["0x1", "0x3"]),
     ]
 
-    rows = _run_query("lint_profiles/modeling_risk/warn_subclass_cycle_direct.cypher", constructs)
+    rows = _run_query(
+        "lint_profiles/description_logic/test_disjoint_classes_shared_subclass_transitive.cypher",
+        constructs,
+    )
 
-    assert rows == [{"class_a": "https://example.org#A", "class_b": "https://example.org#B"}]
+    assert rows == [
+        {
+            "unsatisfiable_class": "https://example.org#A",
+            "disjoint_a": "https://example.org#A",
+            "disjoint_b": "https://example.org#C",
+        }
+    ]
 
 
 def test_subclass_nothing_reports_user_class() -> None:

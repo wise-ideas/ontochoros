@@ -59,6 +59,11 @@ Two layers catch mistakes:
    need a consistency or entailment check. Ontoplexis does not provide a
    separate semantic rule engine.
 
+!!! tip "Refresh derived edges"
+    Cypher writes touch only the structural tables, so the derived-edge cache
+    `D` goes stale. Call `derive_edges(wp)` after authoring if you (or your
+    lint rules) query derived relations.
+
 !!! tip "Migrations"
     Because authoring is plain Cypher against a `.lbug` file, a migration
     system is just an ordered directory of `.cypher` files plus a bookkeeping

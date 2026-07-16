@@ -39,14 +39,25 @@ Ladybug database handles. Both are context managers.
 | `Projection.open(path)` | Open an existing `.lbug` read-only |
 | `.execute(query, parameters=None)` | Raw Cypher → `list[dict]` |
 | `.graph()` | Load the full `Graph` back |
-| `.node_count` / `.edge_count` | Counts |
+| `.node_count` / `.edge_count` / `.derived_count` | Counts |
 | `.database_path` | The backing file |
 | `.close()` | Release the handle |
 | `WritableProjection.open(path=None)` | Open or create writable; omit `path` for a temp projection |
 | `.reopen_readonly()` | Finalize as a read-only `Projection` |
 
-`NODE_TABLE` (`"N"`) and `RELATIONSHIP_TABLE` (`"E"`) are exported for query
-building.
+`NODE_TABLE` (`"N"`), `RELATIONSHIP_TABLE` (`"E"`), and `DERIVED_TABLE`
+(`"D"`) are exported for query building.
+
+## Derived edges
+
+| Member | Purpose |
+|---|---|
+| `derive_edges(writable)` | Rebuild the derived-edge cache `D` from current `N`/`E`; returns per-relation counts |
+
+`build_projection`/`save_projection` (and therefore `Ontology.project()` and
+`Ontology.save_projection()`) derive automatically; call `derive_edges` only
+after mutating `N`/`E` yourself. See
+[Derived Relations](derived.md) for the relation vocabulary.
 
 ## Graph shapes
 

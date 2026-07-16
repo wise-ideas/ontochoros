@@ -27,7 +27,7 @@ Jump to:
 - [Ontology structure](#ontology-structure)
 - [Node and edge properties](#node-and-edge-properties)
 - [Structural edge roles](#structural-edge-roles)
-- [Content addressing](#content-addressing)
+- [Node identifiers](#node-identifiers)
 - [What is out of scope](#what-is-out-of-scope)
 - [Querying by construct kind](#querying-by-construct-kind)
 
@@ -47,27 +47,22 @@ Named entities with IRI identity. Every entity also produces a `Declaration` axi
 
 ## Literals
 
-Literal values as nodes. All three literal forms from the OWL 2 structural
-specification are represented.
+Literal values are a single node kind. All three literal forms from the OWL 2 structural
+specification share it, distinguished by which properties are set.
 
-| `kind`                      | OWL 2 form                                       |
-| --------------------------- | ------------------------------------------------ |
-| `StringLiteralNoLanguage`   | Plain string literal, no language tag            |
-| `StringLiteralWithLanguage` | String literal with language tag (`"text"@en`)   |
-| `TypedLiteral`              | Datatype-tagged literal (`"value"^^xsd:integer`) |
+| `kind`    | OWL 2 forms represented                                                                                |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| `Literal` | Plain string, language-tagged string (`"text"@en`), and typed literal (`"value"^^xsd:integer`) |
 
 Literal node properties:
 
-| `kind`                      | Property        | Description               |
-| --------------------------- | --------------- | ------------------------- |
-| `StringLiteralNoLanguage`   | `quoted_string` | String value              |
-| `StringLiteralWithLanguage` | `quoted_string` | String value              |
-| `StringLiteralWithLanguage` | `language_tag`  | Language tag such as `en` |
-| `TypedLiteral`              | `lexical_form`  | Literal lexical value     |
-| `TypedLiteral`              | `datatype_iri`  | Expanded datatype IRI     |
+| Property       | Description                                             |
+| -------------- | ------------------------------------------------------ |
+| `text`         | The lexical value (`"Dog"`, `"42"`)                    |
+| `lang`         | Language tag such as `en`; null when untagged          |
+| `datatype_iri` | Expanded datatype IRI; set on typed literals           |
 
-Use `COALESCE(val.quoted_string, val.lexical_form)` when you want the string value
-regardless of literal kind.
+The string value is `val.text` regardless of form — no `COALESCE` across kinds needed.
 
 ## Class axioms
 
@@ -128,8 +123,8 @@ regardless of literal kind.
 
 ## Annotation axioms
 
-Annotation axioms are full axiom nodes, not metadata attached to other nodes. Every
-axiom type also carries an `axiom_annotations` field for axiom-level annotations.
+Annotation axioms are full axiom nodes, not metadata attached to other nodes. Axiom-level
+annotations attach as `Annotation` children (edge role `annotation`) of any axiom node.
 
 | `kind`                     | OWL 2 construct                                                              |
 | -------------------------- | ---------------------------------------------------------------------------- |
@@ -191,13 +186,12 @@ Data property class expressions:
 These construct kinds appear in every projection as document-level structure. They are
 not axioms and have no standalone representation in OWL document round-trips.
 
-| `kind`             | Description                                                                     |
-| ------------------ | ------------------------------------------------------------------------------- |
-| `Ontology`         | The ontology itself; carries `ontology_iri`, `version_iri`, and edges to axioms |
-| `OntologyDocument` | The document wrapper; carries edges to prefix declarations and the ontology     |
-| `Import`           | An `owl:imports` declaration; carries the imported IRI as a node property       |
-| `Prefix`           | A prefix declaration (`@prefix`, `Prefix(...)`) from the source document        |
-| `Declaration`      | Explicit entity declaration axiom                                               |
+| `kind`        | Description                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| `Ontology`    | The document root; carries `ontology_iri`, `version_iri`, and edges to prefixes, imports, annotations, and axioms |
+| `Import`      | An `owl:imports` declaration; carries the imported IRI as a node property                |
+| `Prefix`      | A prefix declaration (`Prefix(...)`) from the source document                            |
+| `Declaration` | Explicit entity declaration axiom                                                        |
 
 ## Node and edge properties
 
@@ -212,21 +206,25 @@ Beyond those, several construct types carry additional properties:
 
 ### Literals
 
-| Property        | Applies to                                             | Description                          |
-| --------------- | ------------------------------------------------------ | ------------------------------------ |
-| `quoted_string` | `StringLiteralWithLanguage`, `StringLiteralNoLanguage` | The literal value as a quoted string |
-| `lexical_form`  | `TypedLiteral`                                         | The raw lexical value                |
-| `language_tag`  | `StringLiteralWithLanguage`                            | Language tag (`"en"`, `"de"`, etc.)  |
-| `datatype_iri`  | `TypedLiteral`                                         | Expanded IRI of the datatype         |
+| Property       | Applies to | Description                                    |
+| -------------- | ---------- | ---------------------------------------------- |
+| `text`         | `Literal`  | The lexical value                              |
+| `lang`         | `Literal`  | Language tag (`"en"`, `"de"`, …); null if none |
+| `datatype_iri` | `Literal`  | Expanded IRI of the datatype, on typed literals |
 
 ### Annotation assertions
 
-| Property             | Applies to            | Description                                                     |
-| -------------------- | --------------------- | --------------------------------------------------------------- |
-| `annotation_subject` | `AnnotationAssertion` | IRI of the annotated entity (stored as a property, not an edge) |
+An `AnnotationAssertion` has no subject property. Its subject is an edge (role `subject`)
+to an `IRI` node whose `text` holds the annotated entity's IRI:
 
-This is the property to filter on when querying annotations for a specific entity:
-`WHERE ax.annotation_subject = 'http://example.org/MyClass'`.
+```cypher
+MATCH (ax:N {kind: 'AnnotationAssertion'})-[:E {role: 'subject'}]->(s:N)
+WHERE s.text = 'http://example.org/MyClass'
+```
+
+To join straight to the labelled entity instead, use the derived `annotation_value`
+edge (see [derived relations](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/)),
+which connects the entity node directly to the literal.
 
 ### Ontology and document nodes
 
@@ -239,113 +237,119 @@ This is the property to filter on when querying annotations for a specific entit
 
 ### Edges
 
-| Property         | Applies to                   | Description                                                                                                      |
-| ---------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `role`           | All edges                    | The OWL 2 field name this edge represents (e.g., `sub_class_expression`, `annotation_value`)                     |
-| `endpoint_order` | Edges on ordered list fields | One-based position in an ordered sequence (e.g., steps in an `ObjectPropertyChain`, axioms in `Ontology.axioms`) |
+| Property   | Applies to | Description                                                                            |
+| ---------- | ---------- | -------------------------------------------------------------------------------------- |
+| `role`     | All edges  | The query-facing name this edge represents (e.g., `sub`, `super`, `operand`, `value`)  |
+| `position` | All edges  | The child's zero-based index in document order under its parent                        |
 
-`endpoint_order` is present on edges where the OWL 2 structural specification defines
-an ordered list: property chain steps, disjoint union members, and ontology-level axiom
-ordering. Query it to recover chain position:
+`position` is present on every edge and is what serialization round-trips. Query it to
+recover the order of an ordered field, such as property chain steps:
 
 ```cypher
 MATCH (:N {kind: 'ObjectPropertyChain'})
-      -[link:E {role: 'object_property_expressions'}]->(step:N)
-RETURN step.iri AS step, link.endpoint_order AS position
+      -[link:E {role: 'operand'}]->(step:N)
+RETURN step.iri AS step, link.position AS position
 ORDER BY position
 ```
 
 ## Structural edge roles
 
 The tables below make `constructs.md` the single lookup for which edge roles a construct
-uses in the projection. Role names match the OWL 2 structural field names exactly.
+uses in the projection. Roles are the short query-facing names assigned by the parent
+kind and child position; the canonical source is the
+[Ontoplexis edge-roles reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/roles/).
+Where a role appears more than once (n-ary operands, chain steps), the edges are
+distinguished by `position`.
 
 ### Common class and property axioms
 
-| `kind`                       | Edge roles                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `SubClassOf`                 | `sub_class_expression`, `super_class_expression`                               |
-| `EquivalentClasses`          | `class_expressions`                                                            |
-| `DisjointClasses`            | `class_expressions`                                                            |
-| `DisjointUnion`              | `class`, `class_expressions`                                                   |
-| `SubObjectPropertyOf`        | `sub_object_property_expression`, `super_object_property_expression`           |
-| `EquivalentObjectProperties` | `object_property_expressions`                                                  |
-| `DisjointObjectProperties`   | `object_property_expressions`                                                  |
-| `InverseObjectProperties`    | `first`, `second`                                                              |
-| `ObjectPropertyDomain`       | `object_property_expression`, `class_expression`                               |
-| `ObjectPropertyRange`        | `object_property_expression`, `class_expression`                               |
-| `SubDataPropertyOf`          | `sub_data_property_expression`, `super_data_property_expression`               |
-| `EquivalentDataProperties`   | `data_property_expressions`                                                    |
-| `DisjointDataProperties`     | `data_property_expressions`                                                    |
-| `DataPropertyDomain`         | `data_property_expression`, `class_expression`                                 |
-| `DataPropertyRange`          | `data_property_expression`, `data_range`                                       |
-| `HasKey`                     | `class_expression`, `object_property_expressions`, `data_property_expressions` |
-| `DatatypeDefinition`         | `datatype`, `data_range`                                                       |
-| `Declaration`                | `entity`                                                                       |
+| `kind`                       | Edge roles          |
+| ---------------------------- | ------------------- |
+| `SubClassOf`                 | `sub`, `super`      |
+| `EquivalentClasses`          | `operand`…          |
+| `DisjointClasses`            | `operand`…          |
+| `DisjointUnion`              | `class`, `operand`… |
+| `SubObjectPropertyOf`        | `sub`, `super`      |
+| `EquivalentObjectProperties` | `operand`…          |
+| `DisjointObjectProperties`   | `operand`…          |
+| `InverseObjectProperties`    | `property`, `property` |
+| `ObjectPropertyDomain`       | `property`, `domain` |
+| `ObjectPropertyRange`        | `property`, `range` |
+| `SubDataPropertyOf`          | `sub`, `super`      |
+| `EquivalentDataProperties`   | `operand`…          |
+| `DisjointDataProperties`     | `operand`…          |
+| `DataPropertyDomain`         | `property`, `domain` |
+| `DataPropertyRange`          | `property`, `range` |
+| `HasKey`                     | `class`, `property`… |
+| `DatatypeDefinition`         | `datatype`, `range` |
+| `Declaration`                | `entity`            |
 
 ### Assertions and annotation axioms
 
-| `kind`                            | Edge roles                                                             |
-| --------------------------------- | ---------------------------------------------------------------------- |
-| `ClassAssertion`                  | `class_expression`, `individual`                                       |
-| `ObjectPropertyAssertion`         | `source_individual`, `object_property_expression`, `target_individual` |
-| `NegativeObjectPropertyAssertion` | `source_individual`, `object_property_expression`, `target_individual` |
-| `DataPropertyAssertion`           | `source_individual`, `data_property_expression`, `target_value`        |
-| `NegativeDataPropertyAssertion`   | `source_individual`, `data_property_expression`, `target_value`        |
-| `SameIndividual`                  | `individuals`                                                          |
-| `DifferentIndividuals`            | `individuals`                                                          |
-| `AnnotationAssertion`             | `annotation_property`, `annotation_value`                              |
-| `SubAnnotationPropertyOf`         | `sub_annotation_property`, `super_annotation_property`                 |
-| `AnnotationPropertyDomain`        | `annotation_property`, `domain`                                        |
-| `AnnotationPropertyRange`         | `annotation_property`, `range`                                         |
-| `Annotation`                      | `annotation_property`, `annotation_value`                              |
+| `kind`                            | Edge roles                     |
+| --------------------------------- | ------------------------------ |
+| `ClassAssertion`                  | `class`, `individual`          |
+| `ObjectPropertyAssertion`         | `property`, `subject`, `object` |
+| `NegativeObjectPropertyAssertion` | `property`, `subject`, `object` |
+| `DataPropertyAssertion`           | `property`, `subject`, `object` |
+| `NegativeDataPropertyAssertion`   | `property`, `subject`, `object` |
+| `SameIndividual`                  | `operand`…                     |
+| `DifferentIndividuals`            | `operand`…                     |
+| `AnnotationAssertion`             | `property`, `subject`, `value` |
+| `SubAnnotationPropertyOf`         | `sub`, `super`                 |
+| `AnnotationPropertyDomain`        | `property`, `domain`           |
+| `AnnotationPropertyRange`         | `property`, `range`            |
+| `Annotation`                      | `property`, `value`            |
 
 ### Expressions and data ranges
 
-| `kind`                   | Edge roles                                       |
-| ------------------------ | ------------------------------------------------ |
-| `ObjectIntersectionOf`   | `operands`                                       |
-| `ObjectUnionOf`          | `operands`                                       |
-| `ObjectComplementOf`     | `operand`                                        |
-| `ObjectOneOf`            | `individuals`                                    |
-| `ObjectSomeValuesFrom`   | `object_property_expression`, `class_expression` |
-| `ObjectAllValuesFrom`    | `object_property_expression`, `class_expression` |
-| `ObjectHasValue`         | `object_property_expression`, `individual`       |
-| `ObjectHasSelf`          | `object_property_expression`                     |
-| `ObjectMinCardinality`   | `object_property_expression`, `class_expression` |
-| `ObjectMaxCardinality`   | `object_property_expression`, `class_expression` |
-| `ObjectExactCardinality` | `object_property_expression`, `class_expression` |
-| `DataSomeValuesFrom`     | `data_property_expressions`, `data_range`        |
-| `DataAllValuesFrom`      | `data_property_expressions`, `data_range`        |
-| `DataHasValue`           | `data_property_expression`, `literal`            |
-| `DataMinCardinality`     | `data_property_expression`, `data_range`         |
-| `DataMaxCardinality`     | `data_property_expression`, `data_range`         |
-| `DataExactCardinality`   | `data_property_expression`, `data_range`         |
-| `DataIntersectionOf`     | `operands`                                       |
-| `DataUnionOf`            | `operands`                                       |
-| `DataComplementOf`       | `operand`                                        |
-| `DataOneOf`              | `literals`                                       |
-| `DatatypeRestriction`    | `datatype`, `facet_restrictions`                 |
-| `FacetRestriction`       | `facet_value`                                    |
-| `ObjectInverseOf`        | `object_property`                                |
-| `ObjectPropertyChain`    | `object_property_expressions`                    |
+| `kind`                   | Edge roles           |
+| ------------------------ | -------------------- |
+| `ObjectIntersectionOf`   | `operand`…           |
+| `ObjectUnionOf`          | `operand`…           |
+| `ObjectComplementOf`     | `operand`            |
+| `ObjectOneOf`            | `operand`…           |
+| `ObjectSomeValuesFrom`   | `property`, `filler` |
+| `ObjectAllValuesFrom`    | `property`, `filler` |
+| `ObjectHasValue`         | `property`, `filler` |
+| `ObjectHasSelf`          | `property`           |
+| `ObjectMinCardinality`   | `property`, `filler` |
+| `ObjectMaxCardinality`   | `property`, `filler` |
+| `ObjectExactCardinality` | `property`, `filler` |
+| `DataSomeValuesFrom`     | `property`, `filler` |
+| `DataAllValuesFrom`      | `property`, `filler` |
+| `DataHasValue`           | `property`, `filler` |
+| `DataMinCardinality`     | `property`, `filler` |
+| `DataMaxCardinality`     | `property`, `filler` |
+| `DataExactCardinality`   | `property`, `filler` |
+| `DataIntersectionOf`     | `operand`…           |
+| `DataUnionOf`            | `operand`…           |
+| `DataComplementOf`       | `operand`            |
+| `DataOneOf`              | `operand`…           |
+| `DatatypeRestriction`    | `datatype`, `facet`… |
+| `FacetRestriction`       | `value`              |
+| `ObjectInverseOf`        | `property`           |
+| `ObjectPropertyChain`    | `operand`…           |
 
 ### Ontology structure
 
-| `kind`             | Edge roles                                            |
-| ------------------ | ----------------------------------------------------- |
-| `Ontology`         | `axioms`, `annotations`, `directly_imports_documents` |
-| `OntologyDocument` | `prefixes`, `ontology`                                |
-| `Import`           | none                                                  |
-| `Prefix`           | none                                                  |
+The `Ontology` node is the document root. Its children take a role by kind — `prefix`,
+`import`, `annotation`, or `axiom` — rather than a single list role. There is no separate
+`OntologyDocument` node in the projection.
 
-## Content addressing
+| `kind`     | Edge roles                                 |
+| ---------- | ------------------------------------------ |
+| `Ontology` | `prefix`, `import`, `annotation`, `axiom`  |
+| `Import`   | none                                       |
+| `Prefix`   | none                                       |
 
-Every node in the projection carries a `uid`. For the content-addressing model behind
-those UIDs, see [The Projection Graph Model](cypher-model.md#the-uid-and-content-addressing).
-This reference page stays at the fact level: named entities carry stable `uid` values
-derived from identity, and anonymous constructs carry stable `uid` values derived from
-their structure.
+## Node identifiers
+
+Every node in the projection carries a `uid`, assigned in document order (`n0`, `n1`, …)
+on each build. Named entities and leaf values are deduplicated to one node, but the ids
+are positional and **not stable across rebuilds** — use `iri` as the durable identifier
+for named entities. Migrations get a separate, deterministic id from the `scalar_uid` /
+`axiom_uid` helpers. See [The Projection Graph Model](cypher-model.md#the-uid).
 
 ## What is out of scope
 
@@ -370,10 +374,10 @@ Every node in the projection carries a `kind` property. Use it to filter by cons
 type:
 
 ```cypher
-MATCH (n:N {kind: 'SubClassOf'}) RETURN count(*) AS count
-MATCH (n:N {kind: 'ObjectSomeValuesFrom'}) RETURN count(*) AS count
+MATCH (n:N {kind: 'SubClassOf'}) RETURN count(*) AS count;
+MATCH (n:N {kind: 'ObjectSomeValuesFrom'}) RETURN count(*) AS count;
 MATCH (n:N) WHERE n.kind IN ['ObjectMinCardinality', 'ObjectMaxCardinality', 'ObjectExactCardinality']
-RETURN n.kind AS kind, count(*) AS count ORDER BY kind
+RETURN n.kind AS kind, count(*) AS count ORDER BY kind;
 ```
 
 To see every kind present in a given projection:

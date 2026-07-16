@@ -22,6 +22,7 @@ the walker's output against OWLAPI, the reference implementation.
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+import xml.parsers.expat
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Literal
@@ -192,8 +193,42 @@ class Graph:
     edges: tuple[Edge, ...]
 
 
+class _PrologClean(Exception):
+    """Sentinel: the prolog was scanned up to the root element with no DTD."""
+
+
+def _reject_doctype(text: str) -> None:
+    """Refuse documents carrying a DTD, before handing them to ElementTree.
+
+    OWL/XML never needs a document type declaration, and rejecting DOCTYPE
+    outright closes both entity-expansion (billion-laughs) and external-entity
+    (XXE) vectors regardless of the underlying parser's defaults. A DOCTYPE can
+    only appear in the prolog, so the scan aborts at the root element and costs
+    nothing on the document body.
+    """
+
+    def forbid(*_args: object) -> None:
+        raise OwlXmlStructureError(
+            "Document type declarations (<!DOCTYPE ...>) are not allowed in OWL/XML input."
+        )
+
+    def stop(*_args: object) -> None:
+        raise _PrologClean
+
+    parser = xml.parsers.expat.ParserCreate()
+    parser.StartDoctypeDeclHandler = forbid
+    parser.StartElementHandler = stop
+    try:
+        parser.Parse(text, True)
+    except _PrologClean:
+        return
+    except xml.parsers.expat.ExpatError:
+        return  # not well-formed: fall through so ElementTree reports it
+
+
 def parse_owlxml(text: str) -> Graph:
     """Parse an OWL/XML document into a `Graph`."""
+    _reject_doctype(text)
     try:
         root = ET.fromstring(text)
     except ET.ParseError as exc:

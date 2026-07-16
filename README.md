@@ -7,6 +7,36 @@ independently publishable Python packages that evolve together:
 - `packages/ontoplexis`: lossless OWL/XML and Cypher-queryable graph mapping.
 - `packages/ontopoiesis`: operator CLI and workflows over Ontoplexis projections.
 
+## Positioning
+
+Think "dbt for OWL ontologies": a pure-Python, engineering-workflow-shaped
+toolchain for structural authoring, QA, diff, impact, and CI over the OWL 2
+structural specification — stored directly as a graph, losslessly
+round-tripping to OWL/XML, with no JVM at runtime. It is **complementary to**
+reasoners, SHACL, and triple stores, not a replacement for any of them.
+
+Non-goals, stated up front:
+
+- **Reasoning.** Nothing here computes entailments. Materialize inference
+  externally — `ontopoiesis reason` wraps `robot reason` (ELK/HermiT) behind
+  an opt-in, user-provided jar — and build the output; inferred axioms then
+  behave like any other told structure.
+- **Instance-data (ABox) validation.** For SHACL over RDF data graphs, use
+  pyshacl. The Cypher lint/test system here validates ontology *structure*.
+- **Non-OWL/XML formats.** OWL/XML is the only document format the toolchain
+  parses; `ontopoiesis convert` pre-converts Turtle/RDF-XML/OBO through the
+  same opt-in ROBOT shim.
+- **A hosted service.** These are libraries and a CLI, meant as components in
+  a pipeline.
+
+## Stability
+
+Pre-1.0 in spirit: packages version by CalVer and there is no compatibility
+promise yet. Public APIs are pinned by contract tests and names are removed
+deliberately, never silently — but they *are* removed. Built projections
+(`.lbug`) are caches, not interchange artifacts: rebuild them after upgrading
+rather than carrying them across versions.
+
 ## Why it matters
 
 Building the bundled example ontologies into projections and querying them

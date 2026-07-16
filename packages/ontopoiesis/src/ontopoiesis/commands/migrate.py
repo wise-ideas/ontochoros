@@ -26,6 +26,10 @@ def migrate(
 
     with MigrationRunner(start_from=start_from) as runner:
         result = runner.apply_all(migrations_dir)
+        # Migrations mutate N/E directly, so the derived-edge cache is stale;
+        # rebuild it before the projection is finalized (both fresh and
+        # incremental paths persist from this same writable session).
+        runner.refresh_derived_edges()
         if start_from is None:
             db_path = runner.database_path
             projection = runner.build_database()

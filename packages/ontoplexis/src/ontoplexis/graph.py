@@ -1,7 +1,8 @@
 """Ladybug-backed projection storage for OWL/XML graphs.
 
 One node table ``N`` (kind plus the fixed scalar-property columns from the
-OWL/XML mapping) and one relationship table ``E`` (position, role). The
+OWL/XML mapping), one relationship table ``E`` (position, role), and one
+derived-edge cache table ``D`` (filled by `ontoplexis.derive`). The
 `Projection` handle is read-only; `WritableProjection` supports graph-native
 authoring with raw Cypher.
 """
@@ -25,6 +26,7 @@ from ontoplexis.owlxml import SCALAR_PROPERTIES, Edge, Graph, Node, OwlXmlStruct
 
 NODE_TABLE = "N"
 RELATIONSHIP_TABLE = "E"
+DERIVED_TABLE = "D"
 
 QueryRow = dict[str, object]
 
@@ -85,6 +87,10 @@ class Projection:
     @property
     def edge_count(self) -> int:
         return self._count(f"MATCH ()-[r:{RELATIONSHIP_TABLE}]->() RETURN count(r) AS count")
+
+    @property
+    def derived_count(self) -> int:
+        return self._count(f"MATCH ()-[r:{DERIVED_TABLE}]->() RETURN count(r) AS count")
 
     def _count(self, query: str) -> int:
         (row,) = self.execute(query)
@@ -195,10 +201,19 @@ class WritableProjection(Projection):
 
 
 def build_projection(graph: Graph) -> Projection:
-    """Build one in-memory (temp-file) read-only projection from a graph."""
+    """Build one in-memory (temp-file) read-only projection from a graph.
+
+    The derived-edge table ``D`` is always materialized before the projection
+    is sealed read-only, so every projection is query-ready by construction —
+    there is no un-derived state for consumers to guard against.
+    """
     writable = _create_writable(cls=WritableProjection)
     try:
         _populate(writable._connection, graph)
+        # Local import: derive.py depends on this module.
+        from ontoplexis.derive import derive_edges
+
+        derive_edges(writable)
     except Exception:
         writable.close()
         raise
@@ -218,6 +233,10 @@ def save_projection(graph: Graph, path: str | Path) -> Projection:
     try:
         try:
             _populate(writable._connection, graph)
+            # Local import: derive.py depends on this module.
+            from ontoplexis.derive import derive_edges
+
+            derive_edges(writable)
         finally:
             writable.close()
         os.replace(temp_path, target_path)
@@ -276,6 +295,13 @@ def _initialize_schema(conn: real_ladybug.Connection) -> None:
     conn.execute(
         f"CREATE REL TABLE {RELATIONSHIP_TABLE}"
         f"(FROM {NODE_TABLE} TO {NODE_TABLE}, position INT64, role STRING)"
+    )
+    # The derived-edge cache is part of the fixed schema (created empty, filled
+    # by ontoplexis.derive.derive_edges) so queries against D never hit a
+    # missing table, even on projections that were authored but never derived.
+    conn.execute(
+        f"CREATE REL TABLE {DERIVED_TABLE}"
+        f"(FROM {NODE_TABLE} TO {NODE_TABLE}, relation STRING, property STRING, quantifier STRING)"
     )
 
 
@@ -353,6 +379,7 @@ def _query_rows(
 
 
 __all__ = [
+    "DERIVED_TABLE",
     "NODE_TABLE",
     "Projection",
     "ProjectionStorageError",

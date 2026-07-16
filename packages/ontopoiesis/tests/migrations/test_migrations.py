@@ -27,6 +27,19 @@ def test_migration_runner_executes_rendered_cypher_verbatim() -> None:
         assert len(ontology_edges) == 18
 
 
+def test_refresh_derived_edges_materializes_relations_from_migrated_structure() -> None:
+    migrations = Path(__file__).resolve().parents[2] / "examples" / "migrations"
+    with MigrationRunner() as runner:
+        runner.apply_all(migrations)
+        runner.refresh_derived_edges()
+
+        rows = runner._require_projection().execute(
+            "MATCH ()-[d:D {relation: 'subclass_of'}]->() RETURN count(*) AS c"
+        )
+
+    assert rows[0]["c"] > 0
+
+
 def test_migration_runner_applies_one_file_atomically(tmp_path: Path) -> None:
     migration = tmp_path / "V0001__broken.cypher"
     migration.write_text(

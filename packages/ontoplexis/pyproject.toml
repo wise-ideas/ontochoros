@@ -52,6 +52,7 @@ include = ["ontoplexis*"]
 [tool.setuptools.package-data]
 "ontoplexis" = [
     "py.typed",
+    "derive.cypher",
 ]
 
 [tool.ty.environment]
