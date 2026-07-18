@@ -1,7 +1,7 @@
 [project]
-name = "ontotheke"
+name = "ontochoros"
 version = "0.0.0"
-description = "Development workspace for the Ontotheke OWL 2 tooling family"
+description = "Development workspace for the Ontochoros OWL 2 tooling family"
 requires-python = ">=3.11"
 
 [dependency-groups]

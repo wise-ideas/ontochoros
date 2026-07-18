@@ -26,9 +26,9 @@ a complete record set perform those operations.
 Ontophora is the typed-model library in the wider ontology tooling family. It
 is independent of its sister projects:
 
-- [Ontoplexis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis) maps OWL/XML to a
+- [Ontoplexis](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontoplexis) maps OWL/XML to a
   Cypher-queryable graph and back.
-- [Ontopoiesis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis) provides operator
+- [Ontopoiesis](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontopoiesis) provides operator
   workflows such as build, lint, test, diff, and render on Ontoplexis
   projections.
 
@@ -56,9 +56,9 @@ print(records_to_json([animal, dog, axiom]))
 
 ## Documentation
 
-Read the [documentation](https://wise-ideas.github.io/ontotheke/ontophora/) for a
+Read the [documentation](https://wise-ideas.github.io/ontochoros/ontophora/) for a
 tutorial, JSON package guidance, the model rationale, and the API reference.
 
 ## License
 
-Ontophora is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontophora/LICENSE).
+Ontophora is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontochoros/blob/main/packages/ontophora/LICENSE).

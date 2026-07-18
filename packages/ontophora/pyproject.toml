@@ -30,11 +30,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora"
-Documentation = "https://wise-ideas.github.io/ontotheke/ontophora/"
-Source = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora"
-Issues = "https://github.com/wise-ideas/ontotheke/issues"
-Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontophora"
+Homepage = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontophora"
+Documentation = "https://wise-ideas.github.io/ontochoros/ontophora/"
+Source = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontophora"
+Issues = "https://github.com/wise-ideas/ontochoros/issues"
+Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontophora"
 
 [dependency-groups]
 dev = [

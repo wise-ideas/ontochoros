@@ -1,9 +1,9 @@
-# Ontotheke
+# Ontochoros
 
 **Lint, test, diff, and CI for OWL ontologies — think dbt, for ontology
 engineering.**
 
-Ontotheke turns an OWL 2 ontology into an embedded, Cypher-queryable graph,
+Ontochoros turns an OWL 2 ontology into an embedded, Cypher-queryable graph,
 then gives you the workflow you already trust for code and data — build,
 query, lint, test, diff, migrate:
 
@@ -66,7 +66,7 @@ The cards below say what each package *is*; the table says which to reach for.
 
 ## Where to start
 
-- New here? Read [why Ontotheke exists](why.md), then run the
+- New here? Read [why Ontochoros exists](why.md), then run the
   [Ontopoiesis quickstart](ontopoiesis/quickstart.md) — it builds, queries,
   lints, and diffs bundled sample ontologies in about ten minutes.
 - Want proof first? The [case studies](ontopoiesis/case-studies.md) audit

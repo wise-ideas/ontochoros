@@ -1,9 +1,9 @@
-# Ontotheke
+# Ontochoros
 
 **Lint, test, diff, and CI for OWL 2 ontologies — think dbt, for ontology
 engineering.**
 
-Ontotheke turns an ontology into an embedded, Cypher-queryable graph, then
+Ontochoros turns an ontology into an embedded, Cypher-queryable graph, then
 puts an engineering workflow on top: author, lint, test, diff, analyze
 impact, and gate in CI — all over the OWL 2 structural specification. It is
 pure Python, needs no JVM at runtime, and round-trips losslessly to OWL/XML.
@@ -17,9 +17,9 @@ ontopoiesis diff v1.lbug v2.lbug            # what changed, per axiom
 ontopoiesis export pizza.lbug               # losslessly back to OWL/XML
 ```
 
-**[Documentation](https://wise-ideas.github.io/ontotheke/)** ·
-**[Why this exists](https://wise-ideas.github.io/ontotheke/why/)** ·
-**[Quickstart](https://wise-ideas.github.io/ontotheke/ontopoiesis/quickstart/)**
+**[Documentation](https://wise-ideas.github.io/ontochoros/)** ·
+**[Why this exists](https://wise-ideas.github.io/ontochoros/why/)** ·
+**[Quickstart](https://wise-ideas.github.io/ontochoros/ontopoiesis/quickstart/)**
 
 This repository is the development monorepo for three independently published
 packages that evolve together:
@@ -33,7 +33,7 @@ packages that evolve together:
 
 ## Positioning
 
-Ontotheke complements reasoners, SHACL, and triple stores; it replaces none
+Ontochoros complements reasoners, SHACL, and triple stores; it replaces none
 of them. Non-goals, stated up front:
 
 - **Reasoning.** Nothing here computes entailments. Materialize inference
@@ -51,8 +51,8 @@ of them. Non-goals, stated up front:
 Running the bundled lint baseline against production ontologies surfaces real
 defects — FoaF, the SNOMED CT standard ontology, and the Human Phenotype
 Ontology among them — that off-the-shelf reasoners and reports miss. See
-[Why Ontotheke](https://wise-ideas.github.io/ontotheke/why/) for the argument
-and the [case studies](https://wise-ideas.github.io/ontotheke/ontopoiesis/case-studies/)
+[Why Ontochoros](https://wise-ideas.github.io/ontochoros/why/) for the argument
+and the [case studies](https://wise-ideas.github.io/ontochoros/ontopoiesis/case-studies/)
 for each finding reproduced command by command.
 
 ## Stability

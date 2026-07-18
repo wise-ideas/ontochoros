@@ -7,7 +7,7 @@ title: Development Setup
 Ontoplexis is developed within [Wise Ideas](https://github.com/wise-ideas);
 this guide covers the toolchain and workflow its developers use. Bug reports
 are welcome on the
-[issue tracker](https://github.com/wise-ideas/ontotheke/issues).
+[issue tracker](https://github.com/wise-ideas/ontochoros/issues).
 
 ## Toolchain
 

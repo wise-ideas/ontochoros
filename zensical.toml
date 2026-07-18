@@ -1,13 +1,13 @@
 [project]
-site_name = "Ontotheke"
+site_name = "Ontochoros"
 site_description = "OWL 2 tooling: typed constructs, lossless graph mapping, and an operator toolchain"
-site_url = "https://wise-ideas.github.io/ontotheke/"
-repo_url = "https://github.com/wise-ideas/ontotheke"
+site_url = "https://wise-ideas.github.io/ontochoros/"
+repo_url = "https://github.com/wise-ideas/ontochoros"
 docs_dir = "docs"
 
 nav = [
   { "Home" = "index.md" },
-  { "Why Ontotheke" = "why.md" },
+  { "Why Ontochoros" = "why.md" },
   { "Ontophora" = [
     { "Getting Started" = [
       { "Introduction" = "ontophora/index.md" },

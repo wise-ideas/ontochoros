@@ -1,5 +1,5 @@
 ---
-title: "Why Ontotheke"
+title: "Why Ontochoros"
 ---
 
 # Why manage ontologies like code
@@ -14,7 +14,7 @@ that answers only one kind of question. The result is predictable: widely
 used ontologies, maintained for decades by careful people, quietly accumulate
 structural defects that no reviewer could have spotted by reading.
 
-Ontotheke closes that gap. It treats an ontology the way dbt treats a
+Ontochoros closes that gap. It treats an ontology the way dbt treats a
 warehouse: as typed data behind an engineering workflow — build, query,
 lint, test, diff, migrate — with every step scriptable and CI-friendly.
 
@@ -83,7 +83,7 @@ command by command.
 
 ## What stays with your existing tools
 
-Ontotheke complements reasoners, SHACL, and triple stores; it replaces none
+Ontochoros complements reasoners, SHACL, and triple stores; it replaces none
 of them.
 
 - **Reasoning** stays external. `ontopoiesis reason` wraps `robot reason`

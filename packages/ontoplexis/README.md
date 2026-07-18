@@ -26,10 +26,10 @@ axioms, format conversion, reasoning, or profile checking.
 
 Ontoplexis is the graph core for the family:
 
-- [Ontopoiesis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis) depends on it for
+- [Ontopoiesis](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontopoiesis) depends on it for
   operator workflows: build, lint, test, diff, impact analysis, rendering, and
   migrations.
-- [Ontophora](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora) is the independent
+- [Ontophora](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontophora) is the independent
   sister library for typed OWL 2 construct records. Ontoplexis deliberately
   keeps its structural model in the graph rather than depending on those
   models.
@@ -67,10 +67,10 @@ print(ont.to_owlxml())   # lossless round trip
 
 ## Documentation
 
-The [documentation](https://wise-ideas.github.io/ontotheke/ontoplexis/) covers the
+The [documentation](https://wise-ideas.github.io/ontochoros/ontoplexis/) covers the
 quickstart, graph schema, edge roles, authoring with Cypher, document
 conversion, and development setup.
 
 ## License
 
-Ontoplexis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontoplexis/LICENSE).
+Ontoplexis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontochoros/blob/main/packages/ontoplexis/LICENSE).

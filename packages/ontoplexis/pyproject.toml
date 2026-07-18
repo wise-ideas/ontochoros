@@ -31,11 +31,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis"
-Documentation = "https://wise-ideas.github.io/ontotheke/ontoplexis/"
-Source = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis"
-Issues = "https://github.com/wise-ideas/ontotheke/issues"
-Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontoplexis"
+Homepage = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontoplexis"
+Documentation = "https://wise-ideas.github.io/ontochoros/ontoplexis/"
+Source = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontoplexis"
+Issues = "https://github.com/wise-ideas/ontochoros/issues"
+Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontoplexis"
 
 [dependency-groups]
 dev = [

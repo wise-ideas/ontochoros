@@ -24,7 +24,7 @@ gates are plain `.cypher` files that fail when they return rows, which means
 your team extends the rule set the way it writes dbt tests. On real
 ontologies the bundled baseline alone finds shipping defects; the
 [case studies](case-studies.md) reproduce them command by command, and
-[Why Ontotheke](../why.md) explains the approach.
+[Why Ontochoros](../why.md) explains the approach.
 
 Ontopoiesis parses OWL/XML only, matching Ontoplexis. Other serializations
 (Turtle, RDF/XML, functional syntax, OBO) are one `robot convert` or Protégé

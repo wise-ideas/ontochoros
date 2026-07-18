@@ -26,7 +26,7 @@ under the W3C Software and Document License:
 https://www.w3.org/copyright/software-license/
 
 See tests/fixtures/README.md in the source repository
-(https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora) for
+(https://github.com/wise-ideas/ontochoros/tree/main/packages/ontophora) for
 the mapping between fixture case IDs and their source documents. These
 materials are used only in the test suite and are not included in
 distributed artifacts (wheels or sdists).

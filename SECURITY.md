@@ -13,5 +13,5 @@ Only the latest release of each package on PyPI receives fixes.
 
 Please do not open a public issue for suspected vulnerabilities. Report them
 privately via
-[GitHub security advisories](https://github.com/wise-ideas/ontotheke/security/advisories/new)
+[GitHub security advisories](https://github.com/wise-ideas/ontochoros/security/advisories/new)
 or by email to ell.wise@gmail.com.

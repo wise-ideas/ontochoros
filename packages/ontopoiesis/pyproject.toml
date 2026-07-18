@@ -37,11 +37,11 @@ dependencies = [
 ontopoiesis = "ontopoiesis.app:app"
 
 [project.urls]
-Homepage = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis"
-Documentation = "https://wise-ideas.github.io/ontotheke/ontopoiesis/"
-Source = "https://github.com/wise-ideas/ontotheke/tree/main/packages/ontopoiesis"
-Issues = "https://github.com/wise-ideas/ontotheke/issues"
-Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontopoiesis"
+Homepage = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontopoiesis"
+Documentation = "https://wise-ideas.github.io/ontochoros/ontopoiesis/"
+Source = "https://github.com/wise-ideas/ontochoros/tree/main/packages/ontopoiesis"
+Issues = "https://github.com/wise-ideas/ontochoros/issues"
+Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontopoiesis"
 
 [dependency-groups]
 dev = [

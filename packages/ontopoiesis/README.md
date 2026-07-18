@@ -3,13 +3,13 @@
 Lint, test, diff, and CI for OWL 2 ontologies — manage an ontology like code.
 
 Ontopoiesis builds an OWL/XML ontology into a Cypher-queryable
-[Ontoplexis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis)
+[Ontoplexis](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontoplexis)
 projection, then runs the day-to-day workflows around that one artifact:
 query, lint, test, diff, impact analysis, render, migrate, and export.
 Quality gates are plain `.cypher` files that fail when they return rows, so
 teams extend the rule set the way they write dbt tests — and the stock
 baseline alone finds shipping defects in production ontologies
-([why this exists](https://wise-ideas.github.io/ontotheke/why/)).
+([why this exists](https://wise-ideas.github.io/ontochoros/why/)).
 
 ## Scope
 
@@ -24,7 +24,7 @@ provide typed OWL construct models.
 OWL/XML  -->  Ontoplexis projection  -->  Ontopoiesis workflows
 ```
 
-Ontopoiesis depends on Ontoplexis. [Ontophora](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontophora)
+Ontopoiesis depends on Ontoplexis. [Ontophora](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontophora)
 is a separate sister library that provides typed OWL 2 construct records; it is
 not a dependency of this CLI.
 
@@ -43,9 +43,9 @@ ontopoiesis export pizza.lbug
 
 ## Documentation
 
-Read the [documentation](https://wise-ideas.github.io/ontotheke/ontopoiesis/)
+Read the [documentation](https://wise-ideas.github.io/ontochoros/ontopoiesis/)
 for installation, the quickstart, command guides, and CLI reference.
 
 ## License
 
-Ontopoiesis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontotheke/blob/main/packages/ontopoiesis/LICENSE).
+Ontopoiesis is licensed under the [Apache License 2.0](https://github.com/wise-ideas/ontochoros/blob/main/packages/ontopoiesis/LICENSE).
