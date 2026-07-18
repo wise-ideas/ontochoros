@@ -263,7 +263,7 @@ CONSTRUCT_METADATA: tuple[ConstructMetadata, ...] = (
     _metadata(ObjectPropertyRange, abstract_groups=frozenset({"Axiom", "ObjectPropertyAxiom"})),
     _metadata(ReflexiveObjectProperty, abstract_groups=frozenset({"Axiom", "ObjectPropertyAxiom"})),
     _metadata(SameIndividual, abstract_groups=frozenset({"Axiom", "Assertion"})),
-    _metadata(SubClassOf, is_blank_node=True, abstract_groups=frozenset({"Axiom", "ClassAxiom"})),
+    _metadata(SubClassOf, abstract_groups=frozenset({"Axiom", "ClassAxiom"})),
     _metadata(SubDataPropertyOf, abstract_groups=frozenset({"Axiom", "DataPropertyAxiom"})),
     _metadata(SubObjectPropertyOf, abstract_groups=frozenset({"Axiom", "ObjectPropertyAxiom"})),
     _metadata(SymmetricObjectProperty, abstract_groups=frozenset({"Axiom", "ObjectPropertyAxiom"})),

@@ -161,3 +161,52 @@ def test_derived_layer_is_invisible_to_round_trip(tmp_path) -> None:
     assert not any(e.role == "subclass_of" for e in recovered.edges)
     # and the recovered structural graph still serializes
     assert "SubClassOf" in Ontology(recovered).to_owlxml()
+
+
+_PREFIX_COLLISION_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://ex.org/o">
+    <Prefix name="ex" IRI="http://ex.org/o#Dog"/>
+    <Declaration><Class IRI="http://ex.org/o#Dog"/></Declaration>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#label"/>
+        <IRI>http://ex.org/o#Dog</IRI>
+        <Literal xml:lang="en">Dog</Literal>
+    </AnnotationAssertion>
+</Ontology>
+"""
+
+
+def test_annotation_fan_out_skips_non_entity_iri_carriers() -> None:
+    # A Prefix node stores its namespace in the iri column; a namespace equal
+    # to an annotated entity IRI must not pull the Prefix into the fan-out.
+    with Ontology.from_owlxml(_PREFIX_COLLISION_OWLXML).project() as p:
+        rows = p.execute(
+            "MATCH (s:N)-[:D {relation:'annotation_value'}]->(:N) RETURN s.kind AS kind"
+        )
+    assert [r["kind"] for r in rows] == ["Class"]
+
+
+_REPEATED_OPERAND_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://ex.org/o">
+    <EquivalentClasses>
+        <Class IRI="http://ex.org/o#A"/>
+        <Class IRI="http://ex.org/o#B"/>
+        <Class IRI="http://ex.org/o#A"/>
+    </EquivalentClasses>
+</Ontology>
+"""
+
+
+def test_repeated_operands_do_not_duplicate_derived_edges() -> None:
+    # EquivalentClasses(A B A) merges the repeated operand to one node with
+    # parallel E edges. Each pair of distinct operands must still yield exactly
+    # one derived edge per direction, not one per edge-instance combination.
+    with Ontology.from_owlxml(_REPEATED_OPERAND_OWLXML).project() as p:
+        rows = p.execute(
+            "MATCH (a:N)-[:D {relation:'equivalent_class'}]->(b:N) "
+            "RETURN a.iri AS a_iri, b.iri AS b_iri ORDER BY a_iri, b_iri"
+        )
+    assert [(r["a_iri"], r["b_iri"]) for r in rows] == [
+        ("http://ex.org/o#A", "http://ex.org/o#B"),
+        ("http://ex.org/o#B", "http://ex.org/o#A"),
+    ]

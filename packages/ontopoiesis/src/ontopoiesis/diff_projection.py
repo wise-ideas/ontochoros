@@ -58,10 +58,10 @@ def diff_projections(before_path: Path, after_path: Path) -> list[DiffRow]:
 def _load_projection_entries(path: Path) -> list[_DiffEntry]:
     with Projection.open(path) as projection:
         graph = projection.graph()
-    return fingerprint_constructs(graph)
+    return _fingerprint_graph_constructs(graph)
 
 
-def fingerprint_constructs(graph: Graph) -> list[_DiffEntry]:
+def _fingerprint_graph_constructs(graph: Graph) -> list[_DiffEntry]:
     """Fingerprint every top-level construct (child of an Ontology node)."""
     nodes_by_uid = {node.uid: node for node in graph.nodes}
     children: dict[str, list[Edge]] = defaultdict(list)

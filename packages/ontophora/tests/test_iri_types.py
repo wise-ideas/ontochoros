@@ -87,6 +87,13 @@ def test_prefix_name_accepts_sparql_pname_ns_examples(value: str) -> None:
     assert TypeAdapter(PrefixName).validate_python(value) == value
 
 
+@pytest.mark.parametrize("value", ["é:x", "a..b:x", "ex:café", "ex:a:b"])
+def test_abbreviated_iri_accepts_sparql_pname_ln_examples(value: str) -> None:
+    # The abbreviated-IRI grammar must accept every prefix that PrefixName
+    # accepts, plus SPARQL PN_LOCAL local names (which may contain ':').
+    assert TypeAdapter(AbbreviatedIRI).validate_python(value) == value
+
+
 def test_node_id_accepts_anonymous_individual_examples() -> None:
     # OWL 2 Structural Specification uses _: identifiers for anonymous individuals.
     construct = AnonymousIndividual.model_validate(

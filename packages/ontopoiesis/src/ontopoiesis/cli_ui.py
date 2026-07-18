@@ -78,7 +78,7 @@ def print_violation_rows(
 ) -> None:
     """Print violation rows as a Rich table."""
     target = err_console if err else console
-    _render_violation_rows_to(target, rows, max_rows)
+    _render_violation_rows_to(target, rows, max_rows, verbosity_hint=False)
 
 
 def format_violation_rows(
@@ -87,7 +87,7 @@ def format_violation_rows(
 ) -> str:
     """Render violation rows to a string, for use in pytest output."""
     capture = Console(record=True, highlight=False, theme=_THEME)
-    _render_violation_rows_to(capture, rows, max_rows)
+    _render_violation_rows_to(capture, rows, max_rows, verbosity_hint=True)
     return capture.export_text()
 
 
@@ -95,6 +95,8 @@ def _render_violation_rows_to(
     target: Console,
     rows: Sequence[QueryRow],
     max_rows: int | None,
+    *,
+    verbosity_hint: bool,
 ) -> None:
     target.print(f"query returned {len(rows)} violation row(s)")
     if rows and (max_rows is None or max_rows > 0):
@@ -107,9 +109,12 @@ def _render_violation_rows_to(
         target.print(table)
     if max_rows is not None and len(rows) > max_rows:
         hidden = len(rows) - max_rows
-        hint = (
-            "run with -v to see a sample"
-            if max_rows == 0
-            else f"{hidden} more, run with -vv to show all"
-        )
+        if verbosity_hint:
+            hint = (
+                "run with -v to see a sample"
+                if max_rows == 0
+                else f"{hidden} more, run with -vv to show all"
+            )
+        else:
+            hint = f"{hidden} more row(s) not shown"
         target.print(f"  … {hint}")

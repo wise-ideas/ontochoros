@@ -5,17 +5,17 @@ from typing import Annotated, TypeAlias
 from language_tags import tags
 from pydantic import AfterValidator, NonNegativeInt, StringConstraints
 
-from ontophora.constructs.iri import IRI, AbbreviatedIRI, FullIRI
+from ontophora.constructs.iri import (
+    IRI,
+    PN_CHARS,
+    PN_CHARS_U,
+    PN_PREFIX,
+    AbbreviatedIRI,
+    FullIRI,
+)
 from ontophora.uid import UID
 
-# Character classes transcribed from the SPARQL 1.1 grammar
-# (https://www.w3.org/TR/sparql11-query/#rPN_CHARS_BASE), which OWL 2
-# Structural Specification section 2.1 references for nodeID and prefix names.
-_PN_CHARS_BASE = "A-Za-zÀ-ÖØ-öø-˿Ͱ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿯、-퟿豈-﷏ﷰ-�\U00010000-\U000effff"
-_PN_CHARS_U = _PN_CHARS_BASE + "_"
-_PN_CHARS = _PN_CHARS_U + "\\-0-9·̀-ͯ‿-⁀"
-_PN_PREFIX = rf"[{_PN_CHARS_BASE}](?:[{_PN_CHARS}.]*[{_PN_CHARS}])?"
-_BLANK_NODE_LABEL = rf"_:[{_PN_CHARS_U}0-9](?:[{_PN_CHARS}.]*[{_PN_CHARS}])?"
+_BLANK_NODE_LABEL = rf"_:[{PN_CHARS_U}0-9](?:[{PN_CHARS}.]*[{PN_CHARS}])?"
 
 
 def _strip_leading_at(value: str) -> str:
@@ -56,7 +56,7 @@ NodeID = Annotated[
 
 NonNegativeInteger: TypeAlias = NonNegativeInt
 
-_PREFIX_NAME_RE = re.compile(rf"(?:{_PN_PREFIX})?:")
+_PREFIX_NAME_RE = re.compile(rf"(?:{PN_PREFIX})?:")
 
 
 def _validate_prefix_name(value: str) -> str:

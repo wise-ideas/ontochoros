@@ -110,9 +110,8 @@ class MigrationRunner:
             _log.debug("Skipping already-applied migration: %s", migration_id)
             return None
         _log.debug("Applying migration: %s", migration_id)
-        executable = _migration_for_execution(text)
-        if executable:
-            projection.execute(executable)
+        if _has_executable_content(text):
+            projection.execute(text)
         _record_applied_migration(projection, migration_id)
         self._applied.append(migration_id)
         return MigrationRecord(
@@ -214,6 +213,16 @@ def _record_applied_migration(projection: WritableProjection, migration_id: str)
     )
 
 
-def _migration_for_execution(text: str) -> str:
-    lines = [line for line in text.splitlines() if not line.strip().startswith("//")]
-    return "\n".join(lines).strip()
+def _has_executable_content(text: str) -> bool:
+    """Return whether a migration has any statement to run.
+
+    The engine parses ``//`` line comments (leading and trailing) natively, so
+    migrations are executed verbatim and ``//`` inside a string literal is left
+    intact. This only screens out comment-only files, which the parser would
+    otherwise reject with a spurious "expecting statement" error.
+    """
+    return any(
+        stripped and not stripped.startswith("//")
+        for line in text.splitlines()
+        if (stripped := line.strip())
+    )

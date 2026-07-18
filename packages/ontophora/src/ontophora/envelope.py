@@ -40,6 +40,11 @@ def _validate_record(item: object, *, index: int) -> dict[str, object]:
     payload = cast(dict[str, object], item)
     if "uid" not in payload:
         raise EnvelopeError(f"Envelope record {index} is missing required field 'uid'")
+    unknown_fields = sorted(set(payload) - {"uid", "construct"})
+    if unknown_fields:
+        raise EnvelopeError(
+            f"Envelope record {index} has unexpected fields: {', '.join(unknown_fields)}"
+        )
     construct_payload = payload.get("construct")
     if not isinstance(construct_payload, dict):
         raise EnvelopeError(f"Envelope record {index} field 'construct' must be a JSON object")

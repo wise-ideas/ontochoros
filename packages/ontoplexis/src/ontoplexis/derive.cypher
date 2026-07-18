@@ -14,21 +14,29 @@ MATCH (ax:N {kind:'SubClassOf'})-[:E {role:'sub'}]->(a:N {kind:'Class'}),
 WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL
 CREATE (a)-[:D {relation:'subclass_of'}]->(b);
 
+// Rules that pair two children carrying the same role (operand-style axioms)
+// dedupe with WITH DISTINCT before CREATE: a repeated operand — legal, e.g.
+// EquivalentClasses(A B A) — merges to one node with parallel E edges, and
+// every edge-instance combination would otherwise create a duplicate D edge.
+
 // DisjointUnion members are subclasses of the union class.
 MATCH (ax:N {kind:'DisjointUnion'})-[:E {role:'class'}]->(c:N {kind:'Class'}),
       (ax)-[:E {role:'operand'}]->(m:N {kind:'Class'})
 WHERE c.iri IS NOT NULL AND m.iri IS NOT NULL
+WITH DISTINCT m, c
 CREATE (m)-[:D {relation:'subclass_of'}]->(c);
 
 MATCH (ax:N {kind:'EquivalentClasses'})-[:E {role:'operand'}]->(a:N {kind:'Class'}),
       (ax)-[:E {role:'operand'}]->(b:N {kind:'Class'})
 WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'equivalent_class'}]->(b);
 
 MATCH (ax)-[:E {role:'operand'}]->(a:N {kind:'Class'}),
       (ax)-[:E {role:'operand'}]->(b:N {kind:'Class'})
 WHERE ax.kind IN ['DisjointClasses','DisjointUnion']
   AND a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'disjoint_class'}]->(b);
 
 MATCH (ax)-[:E {role:'sub'}]->(a:N), (ax)-[:E {role:'super'}]->(b:N)
@@ -39,16 +47,19 @@ CREATE (a)-[:D {relation:'subproperty_of'}]->(b);
 MATCH (ax)-[:E {role:'operand'}]->(a:N), (ax)-[:E {role:'operand'}]->(b:N)
 WHERE ax.kind IN ['EquivalentObjectProperties','EquivalentDataProperties']
   AND a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'equivalent_property'}]->(b);
 
 MATCH (ax)-[:E {role:'operand'}]->(a:N), (ax)-[:E {role:'operand'}]->(b:N)
 WHERE ax.kind IN ['DisjointObjectProperties','DisjointDataProperties']
   AND a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'disjoint_property'}]->(b);
 
 MATCH (ax:N {kind:'InverseObjectProperties'})-[:E {role:'property'}]->(a:N),
       (ax)-[:E {role:'property'}]->(b:N)
 WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'inverse_of'}]->(b);
 
 // Unary property-characteristic axioms are single rdf:type triples
@@ -102,28 +113,32 @@ CREATE (s)-[:D {relation:'data_value', property:p.iri}]->(v);
 MATCH (ax:N {kind:'SameIndividual'})-[:E {role:'operand'}]->(a:N),
       (ax)-[:E {role:'operand'}]->(b:N)
 WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'same_as'}]->(b);
 
 MATCH (ax:N {kind:'DifferentIndividuals'})-[:E {role:'operand'}]->(a:N),
       (ax)-[:E {role:'operand'}]->(b:N)
 WHERE a.iri IS NOT NULL AND b.iri IS NOT NULL AND a.uid <> b.uid
+WITH DISTINCT a, b
 CREATE (a)-[:D {relation:'different_from'}]->(b);
 
 // AnnotationAssertion whose value is an IRI (seeAlso, replaced_by, ...).
 // Subjects and IRI values name IRIs, not entities: the edge is attached to
 // every entity node carrying the IRI, so punned entities each receive it.
+// The explicit kind filter keeps non-entity IRI carriers (Prefix namespace
+// declarations) out of the fan-out.
 MATCH (ax:N {kind:'AnnotationAssertion'})-[:E {role:'property'}]->(p:N),
       (ax)-[:E {role:'subject'}]->(s:N),
       (ax)-[:E {role:'value'}]->(v:N {kind:'IRI'})
-MATCH (se:N) WHERE se.iri IS NOT NULL AND se.iri = s.text
-MATCH (ve:N) WHERE ve.iri IS NOT NULL AND ve.iri = v.text
+MATCH (se:N) WHERE se.kind IN ['Class','Datatype','ObjectProperty','DataProperty','AnnotationProperty','NamedIndividual'] AND se.iri = s.text
+MATCH (ve:N) WHERE ve.kind IN ['Class','Datatype','ObjectProperty','DataProperty','AnnotationProperty','NamedIndividual'] AND ve.iri = v.text
 CREATE (se)-[:D {relation:'annotation', property:p.iri}]->(ve);
 
 // AnnotationAssertion whose value is a literal (labels, comments, ...).
 MATCH (ax:N {kind:'AnnotationAssertion'})-[:E {role:'property'}]->(p:N),
       (ax)-[:E {role:'subject'}]->(s:N),
       (ax)-[:E {role:'value'}]->(v:N {kind:'Literal'})
-MATCH (se:N) WHERE se.iri IS NOT NULL AND se.iri = s.text
+MATCH (se:N) WHERE se.kind IN ['Class','Datatype','ObjectProperty','DataProperty','AnnotationProperty','NamedIndividual'] AND se.iri = s.text
 CREATE (se)-[:D {relation:'annotation_value', property:p.iri}]->(v);
 
 // Marked convenience: NOT single-triple in RDF, but makes the existential

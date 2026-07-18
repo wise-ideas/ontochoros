@@ -5,6 +5,6 @@
 {"uid":"0x14","construct":{"kind":"Declaration","entity":"0x11"}}
 {"uid":"0x15","construct":{"kind":"Declaration","entity":"0x12"}}
 {"uid":"0x16","construct":{"kind":"DataUnionOf","data_ranges":["0x10","0x11"]}}
-{"uid":"0x17","construct":{"kind":"DataAllValuesFrom","data_property_expression":"0x12","data_range":"0x16"}}
+{"uid":"0x17","construct":{"kind":"DataAllValuesFrom","data_property_expressions":["0x12"],"data_range":"0x16"}}
 {"uid":"0x18","construct":{"kind":"TypedLiteral","lexical_form":"\"17\"","datatype":"0x11"}}
 {"uid":"0x19","construct":{"kind":"DataHasValue","data_property_expression":"0x12","literal":"0x18"}}

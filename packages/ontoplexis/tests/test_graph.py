@@ -176,3 +176,18 @@ def test_open_missing_projection_requires_path() -> None:
 
     with pytest.raises(Exception, match="filesystem database path"):
         _open_projection(database_path=None, read_only=True, cls=Projection)
+
+
+def test_save_projection_removes_temp_file_when_open_fails(
+    animals_owlxml: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ontoplexis.graph as graph_module
+
+    def explode(*args: object, **kwargs: object) -> object:
+        raise RuntimeError("database engine unavailable")
+
+    monkeypatch.setattr(graph_module, "_create_writable", explode)
+    with pytest.raises(RuntimeError, match="unavailable"):
+        Ontology.from_owlxml(animals_owlxml).save_projection(tmp_path / "proj.lbug")
+
+    assert list(tmp_path.iterdir()) == []

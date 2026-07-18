@@ -95,7 +95,9 @@ class Projection:
     def _count(self, query: str) -> int:
         (row,) = self.execute(query)
         value = row.get("count")
-        return value if isinstance(value, int) else 0
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ProjectionStorageError(f"Count query returned non-integer {value!r}.")
+        return value
 
     @property
     def database_path(self) -> Path:
@@ -192,12 +194,17 @@ class WritableProjection(Projection):
         owned_temp_dir = self._owned_temp_dir
         self._owned_temp_dir = None
         self._close_handles()
-        return _open_projection(
-            database_path=database_path,
-            read_only=True,
-            cls=Projection,
-            owned_temp_dir=owned_temp_dir,
-        )
+        try:
+            return _open_projection(
+                database_path=database_path,
+                read_only=True,
+                cls=Projection,
+                owned_temp_dir=owned_temp_dir,
+            )
+        except Exception:
+            if owned_temp_dir is not None:
+                owned_temp_dir.close()
+            raise
 
 
 def build_projection(graph: Graph) -> Projection:
@@ -229,8 +236,8 @@ def save_projection(graph: Graph, path: str | Path) -> Projection:
     )
     os.close(fd)
     temp_path = Path(temp_name)
-    writable = _create_writable(path=temp_path, cls=WritableProjection)
     try:
+        writable = _create_writable(path=temp_path, cls=WritableProjection)
         try:
             _populate(writable._connection, graph)
             # Local import: derive.py depends on this module.

@@ -212,6 +212,29 @@ def test_parse_rejects_unknown_attributes() -> None:
         parse_owlxml('<Ontology xmlns="http://www.w3.org/2002/07/owl#" mystery="1"></Ontology>')
 
 
+def test_parse_rejects_non_integer_cardinality() -> None:
+    doc = (
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://example.org/o">'
+        '<SubClassOf><Class IRI="http://example.org/o#A"/>'
+        '<ObjectMinCardinality cardinality="abc">'
+        '<ObjectProperty IRI="http://example.org/o#p"/>'
+        "</ObjectMinCardinality></SubClassOf></Ontology>"
+    )
+    with pytest.raises(OwlXmlStructureError, match="cardinality"):
+        parse_owlxml(doc)
+
+
+def test_parse_rejects_conflicting_iri_attributes() -> None:
+    doc = (
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://example.org/o">'
+        '<Prefix name="ex" IRI="http://example.org/o#"/>'
+        '<Declaration><Class IRI="http://example.org/o#A" abbreviatedIRI="ex:B"/></Declaration>'
+        "</Ontology>"
+    )
+    with pytest.raises(OwlXmlStructureError, match="both IRI and abbreviatedIRI"):
+        parse_owlxml(doc)
+
+
 def test_serialize_rejects_cycles() -> None:
     graph = Graph(
         nodes=(
@@ -230,6 +253,19 @@ def test_serialize_rejects_cycles() -> None:
 def test_serialize_rejects_missing_root() -> None:
     graph = Graph(nodes=(Node(uid="a", kind="Class"),), edges=())
     with pytest.raises(OwlXmlStructureError, match="exactly one parentless Ontology"):
+        serialize_owlxml(graph)
+
+
+def test_serialize_rejects_unreachable_nodes() -> None:
+    """Authoring mistakes must surface as errors, not vanish from the document."""
+    graph = Graph(
+        nodes=(
+            Node(uid="o", kind="Ontology"),
+            Node(uid="c", kind="Class", properties={"iri": "http://example.org/o#A"}),
+        ),
+        edges=(),
+    )
+    with pytest.raises(OwlXmlStructureError, match="unreachable"):
         serialize_owlxml(graph)
 
 
@@ -343,3 +379,125 @@ def test_doctype_is_rejected() -> None:
 def test_malformed_xml_is_still_reported_as_such() -> None:
     with pytest.raises(OwlXmlStructureError, match="Not well-formed"):
         parse_owlxml("<Ontology")
+
+
+_NARY_DATA_RESTRICTION_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://example.org/nary">
+    <SubClassOf>
+        <Class IRI="http://example.org/Person"/>
+        <DataSomeValuesFrom>
+            <DataProperty IRI="http://example.org/hasGivenName"/>
+            <DataProperty IRI="http://example.org/hasFamilyName"/>
+            <Datatype IRI="http://www.w3.org/2001/XMLSchema#string"/>
+        </DataSomeValuesFrom>
+    </SubClassOf>
+</Ontology>
+"""
+
+
+def test_nary_data_restriction_roles_discriminate_by_child_kind() -> None:
+    # OWL 2 sections 8.4.1/8.4.2: DataSomeValuesFrom and DataAllValuesFrom
+    # take one or more data property expressions followed by the data range,
+    # so roles cannot be assigned positionally.
+    graph = parse_owlxml(_NARY_DATA_RESTRICTION_OWLXML)
+    nodes = _nodes_by_uid(graph)
+
+    restriction = next(n for n in graph.nodes if n.kind == "DataSomeValuesFrom")
+    children = sorted(
+        (e for e in graph.edges if e.source == restriction.uid), key=lambda e: e.position
+    )
+    assert [e.role for e in children] == ["property", "property", "filler"]
+    assert [nodes[e.target].kind for e in children] == ["DataProperty", "DataProperty", "Datatype"]
+
+
+def test_nary_data_restriction_round_trips() -> None:
+    once = serialize_owlxml(parse_owlxml(_NARY_DATA_RESTRICTION_OWLXML))
+    assert serialize_owlxml(parse_owlxml(once)) == once
+
+
+_RELATIVE_PREFIX_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+          xml:base="http://example.org/onto/"
+          ontologyIRI="http://example.org/onto">
+    <Prefix name="ex" IRI="terms#"/>
+    <Declaration><Class abbreviatedIRI="ex:Foo"/></Declaration>
+    <Declaration><Class IRI="terms#Foo"/></Declaration>
+</Ontology>
+"""
+
+
+def test_prefix_namespaces_resolve_against_xml_base() -> None:
+    # A term referenced via a CURIE and via a (relative) direct IRI must land
+    # on the same absolute IRI and merge to one node; the trailing "#" of the
+    # namespace must survive base resolution.
+    graph = parse_owlxml(_RELATIVE_PREFIX_OWLXML)
+
+    classes = [n for n in graph.nodes if n.kind == "Class"]
+    assert len(classes) == 1
+    assert classes[0].iri == "http://example.org/onto/terms#Foo"
+    prefix = next(n for n in graph.nodes if n.kind == "Prefix")
+    assert prefix.properties["iri"] == "http://example.org/onto/terms#"
+
+
+def test_prefix_without_iri_attribute_is_rejected() -> None:
+    document = _RELATIVE_PREFIX_OWLXML.replace('IRI="terms#"', "")
+    with pytest.raises(OwlXmlStructureError, match="missing its IRI attribute"):
+        parse_owlxml(document)
+
+
+def test_duplicate_prefix_declaration_is_rejected() -> None:
+    document = _RELATIVE_PREFIX_OWLXML.replace(
+        '<Prefix name="ex" IRI="terms#"/>',
+        '<Prefix name="ex" IRI="terms#"/><Prefix name="ex" IRI="other#"/>',
+    )
+    with pytest.raises(OwlXmlStructureError, match="declared more than once"):
+        parse_owlxml(document)
+
+
+def test_mixed_content_is_rejected() -> None:
+    document = (
+        '<?xml version="1.0"?>\n'
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#">'
+        '<Declaration>stray<Class IRI="http://example.org/A"/></Declaration>'
+        "</Ontology>"
+    )
+    with pytest.raises(OwlXmlStructureError, match="mixes text content"):
+        parse_owlxml(document)
+
+    tail_document = document.replace(
+        'stray<Class IRI="http://example.org/A"/>',
+        '<Class IRI="http://example.org/A"/>stray',
+    )
+    with pytest.raises(OwlXmlStructureError, match="mixes text content"):
+        parse_owlxml(tail_document)
+
+
+def test_parse_rejects_elements_outside_the_owl_namespace() -> None:
+    # Without this, a document in a foreign vocabulary that reuses OWL element
+    # names would parse and round-trip rebranded into the OWL namespace.
+    with pytest.raises(OwlXmlStructureError, match="namespace"):
+        parse_owlxml(
+            '<Ontology xmlns="http://evil.example/ns#">'
+            '<Declaration><Class IRI="http://example.org/A"/></Declaration>'
+            "</Ontology>"
+        )
+    with pytest.raises(OwlXmlStructureError, match="namespace"):
+        parse_owlxml("<Ontology/>")
+
+
+def test_serialize_rejects_text_alongside_children() -> None:
+    # Mirrors the parser's mixed-content rejection: an authored node carrying
+    # both text and child edges would serialize to a document parse refuses.
+    graph = Graph(
+        nodes=(
+            Node(uid="o", kind="Ontology"),
+            Node(uid="d", kind="Declaration", properties={"text": "stray"}),
+            Node(uid="c", kind="Class", properties={"iri": "http://example.org/A"}),
+        ),
+        edges=(
+            Edge(source="o", target="d", position=0, role="axiom"),
+            Edge(source="d", target="c", position=0, role="entity"),
+        ),
+    )
+    with pytest.raises(OwlXmlStructureError, match="mixes text content"):
+        serialize_owlxml(graph)

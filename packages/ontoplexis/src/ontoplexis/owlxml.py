@@ -29,6 +29,7 @@ from typing import Literal
 from urllib.parse import urljoin, urlsplit
 
 OWL_XMLNS = "http://www.w3.org/2002/07/owl#"
+_OWL_TAG_PREFIX = f"{{{OWL_XMLNS}}}"
 _XML_NS = "http://www.w3.org/XML/1998/namespace"
 
 DbType = Literal["STRING", "INT64"]
@@ -121,8 +122,6 @@ _ROLES: dict[str, tuple[tuple[str, ...], str | None]] = {
     "ObjectMinCardinality": (("property", "filler"), None),
     "ObjectMaxCardinality": (("property", "filler"), None),
     "ObjectExactCardinality": (("property", "filler"), None),
-    "DataSomeValuesFrom": (("property", "filler"), None),
-    "DataAllValuesFrom": (("property", "filler"), None),
     "DataHasValue": (("property", "filler"), None),
     "DataMinCardinality": (("property", "filler"), None),
     "DataMaxCardinality": (("property", "filler"), None),
@@ -154,6 +153,16 @@ _ROLES: dict[str, tuple[tuple[str, ...], str | None]] = {
     "DatatypeDefinition": (("datatype", "range"), None),
     "DatatypeRestriction": (("datatype",), "facet"),
     "FacetRestriction": (("value",), None),
+}
+
+# Kinds whose children take roles by child kind rather than by position:
+# OWL 2's n-ary data restrictions hold one or more data property expressions
+# followed by a data range, so the property count is variable. A data property
+# expression is always a named DataProperty and no data range kind is, so the
+# child kind discriminates exactly. Value: (role by child kind, default role).
+_ROLES_BY_CHILD_KIND: dict[str, tuple[dict[str, str], str]] = {
+    "DataSomeValuesFrom": ({"DataProperty": "property"}, "filler"),
+    "DataAllValuesFrom": ({"DataProperty": "property"}, "filler"),
 }
 
 
@@ -237,21 +246,33 @@ def parse_owlxml(text: str) -> Graph:
         raise OwlXmlStructureError(
             f"Expected an <Ontology> root element, got <{_local(root.tag)}>."
         )
-    builder = _Builder(prefixes=_collect_prefixes(root))
+    builder = _Builder(prefixes=_collect_prefixes(root, root.attrib.get(_XML_BASE_ATTR)))
     builder.walk(root)
     return Graph(nodes=tuple(builder.nodes.values()), edges=tuple(builder.edges))
 
 
-def _collect_prefixes(root: ET.Element) -> dict[str, str]:
+def _collect_prefixes(root: ET.Element, base: str | None) -> dict[str, str]:
     """Map prefix name (``""`` for the default) to namespace IRI.
 
     `<Prefix>` declarations are direct children of `<Ontology>`, so the whole map
-    is known before any abbreviated IRI in the body is resolved.
+    is known before any abbreviated IRI in the body is resolved. Namespace IRIs
+    resolve against xml:base exactly like direct IRI attributes do, so both
+    reference forms of a term land on the same absolute IRI.
     """
     prefixes: dict[str, str] = {}
     for child in root:
-        if _local(child.tag) == "Prefix":
-            prefixes[child.attrib.get("name", "")] = child.attrib.get("IRI", "")
+        if _local(child.tag) != "Prefix":
+            continue
+        name = child.attrib.get("name", "")
+        namespace = child.attrib.get("IRI")
+        if namespace is None:
+            raise OwlXmlStructureError(f"<Prefix name={name!r}> is missing its IRI attribute.")
+        if name in prefixes:
+            raise OwlXmlStructureError(f"Prefix {name!r} is declared more than once.")
+        child_base = child.attrib.get(_XML_BASE_ATTR)
+        if child_base is not None:
+            child_base = urljoin(base, child_base) if base else child_base
+        prefixes[name] = _resolve_iri(namespace, child_base if child_base is not None else base)
     return prefixes
 
 
@@ -274,7 +295,14 @@ def serialize_owlxml(graph: Graph) -> str:
             f"Expected exactly one parentless Ontology node, found {len(roots)}."
         )
 
-    element = _emit(roots[0], nodes_by_uid, children, path=frozenset())
+    visited: set[str] = set()
+    element = _emit(roots[0], nodes_by_uid, children, path=frozenset(), visited=visited)
+    unreachable = sorted(set(nodes_by_uid) - visited)
+    if unreachable:
+        raise OwlXmlStructureError(
+            "Nodes unreachable from the Ontology root would be silently dropped: "
+            f"{', '.join(unreachable[:10])}."
+        )
     element.attrib["xmlns"] = OWL_XMLNS
     ET.indent(element)
     return '<?xml version="1.0"?>\n' + ET.tostring(element, encoding="unicode") + "\n"
@@ -290,6 +318,10 @@ def role_for(parent_kind: str, child_kind: str, child_index: int) -> str | None:
         return "annotation"
     if parent_kind == "Ontology":
         return {"Prefix": "prefix", "Import": "import"}.get(child_kind, "axiom")
+    kind_roles = _ROLES_BY_CHILD_KIND.get(parent_kind)
+    if kind_roles is not None:
+        role_by_child_kind, default_role = kind_roles
+        return role_by_child_kind.get(child_kind, default_role)
     leading, rest = _ROLES.get(parent_kind, ((), None))
     if child_index < len(leading):
         return leading[child_index]
@@ -305,6 +337,11 @@ class _Builder:
         self._prefixes = prefixes
 
     def walk(self, element: ET.Element, base: str | None = None) -> str:
+        if not element.tag.startswith(_OWL_TAG_PREFIX):
+            raise OwlXmlStructureError(
+                f"Element <{_local(element.tag)}> is not in the OWL/XML namespace "
+                f"{OWL_XMLNS}; a document in another vocabulary cannot be mapped."
+            )
         raw_kind = _local(element.tag)
         own_base = element.attrib.get(_XML_BASE_ATTR)
         if own_base is not None:
@@ -343,6 +380,11 @@ def _element_properties(
     element: ET.Element, kind: str, base: str | None, prefixes: dict[str, str]
 ) -> dict[str, str | int]:
     properties: dict[str, str | int] = {}
+    if "IRI" in element.attrib and "abbreviatedIRI" in element.attrib:
+        raise OwlXmlStructureError(
+            f"<{kind}> carries both IRI and abbreviatedIRI attributes; "
+            "entity identity must be given exactly once."
+        )
     for attr_name, value in element.attrib.items():
         if attr_name == _XML_BASE_ATTR:
             continue
@@ -356,7 +398,12 @@ def _element_properties(
                 "mapping does not know how to store it."
             )
         if prop == "cardinality":
-            properties[prop] = int(value)
+            try:
+                properties[prop] = int(value)
+            except ValueError as exc:
+                raise OwlXmlStructureError(
+                    f"Attribute cardinality={value!r} on <{kind}> is not an integer."
+                ) from exc
         elif prop in _IRI_PROPERTIES:
             properties[prop] = _resolve_iri(value, base)
         else:
@@ -373,13 +420,25 @@ def _element_properties(
                 properties["text"] = _resolve_iri(text, base)
             else:
                 properties["text"] = text
+    else:
+        stray = [element.text or "", *(child.tail or "" for child in element)]
+        if any(s.strip() for s in stray):
+            raise OwlXmlStructureError(
+                f"<{kind}> mixes text content with child elements; the OWL/XML "
+                "mapping cannot store it."
+            )
     return properties
 
 
 def _resolve_iri(value: str, base: str | None) -> str:
     if base is None or urlsplit(value).scheme:
         return value
-    return urljoin(base, value)
+    resolved = urljoin(base, value)
+    # urljoin drops a trailing empty fragment or query; namespace IRIs end in
+    # "#" routinely, so restore it.
+    if value.endswith(("#", "?")) and not resolved.endswith(value[-1]):
+        resolved += value[-1]
+    return resolved
 
 
 def _resolve_curie(value: str, prefixes: dict[str, str]) -> str:
@@ -412,11 +471,13 @@ def _emit(
     children: dict[str, list[Edge]],
     *,
     path: frozenset[str],
+    visited: set[str],
 ) -> ET.Element:
     if node.uid in path:
         raise OwlXmlStructureError(
             f"Cycle through node {node.uid!r} ({node.kind}); OWL/XML documents are trees."
         )
+    visited.add(node.uid)
     element = ET.Element(node.kind)
     for prop, attr_name in _PROP_TO_ATTR.items():
         value = node.properties.get(prop)
@@ -427,6 +488,11 @@ def _emit(
         element.text = str(text)
 
     child_edges = sorted(children.get(node.uid, []), key=lambda edge: edge.position)
+    if text is not None and child_edges:
+        raise OwlXmlStructureError(
+            f"Node {node.uid!r} ({node.kind}) mixes text content with child edges; "
+            "the OWL/XML mapping cannot serialize it."
+        )
     positions = [edge.position for edge in child_edges]
     if len(set(positions)) != len(positions):
         raise OwlXmlStructureError(
@@ -434,7 +500,11 @@ def _emit(
         )
     next_path = path | {node.uid}
     for edge in child_edges:
-        element.append(_emit(nodes_by_uid[edge.target], nodes_by_uid, children, path=next_path))
+        element.append(
+            _emit(
+                nodes_by_uid[edge.target], nodes_by_uid, children, path=next_path, visited=visited
+            )
+        )
     return element
 
 

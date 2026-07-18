@@ -44,7 +44,7 @@ from ontophora._registry import construct_metadata_by_kind
 
 metadata = construct_metadata_by_kind()["SubClassOf"]
 assert "Axiom" in metadata.abstract_groups
-assert metadata.is_blank_node
+assert construct_metadata_by_kind()["ObjectSomeValuesFrom"].is_blank_node
 ```
 
 The metadata marks document constructs, blank-node constructs, IRI-identified

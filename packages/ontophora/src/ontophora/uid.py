@@ -1,18 +1,19 @@
+import re
 from typing import Annotated
 
 from pydantic import AfterValidator
 
 NUMBER_OF_BYTES = 4
 
+_UID_RE = re.compile(r"0[xX][0-9A-Fa-f]+")
+
 
 def _validate_uid(value: str) -> str:
-    if not value.startswith(("0x", "0X")):
+    # int(value, 16) alone is too lenient: it accepts underscores and
+    # surrounding whitespace, which are not valid in the wire form.
+    if _UID_RE.fullmatch(value) is None:
         raise ValueError(f"Invalid UID: {value}")
-    try:
-        parsed = int(value, 16)
-    except ValueError as exc:
-        raise ValueError(f"Invalid UID: {value}") from exc
-    return hex(parsed)
+    return hex(int(value, 16))
 
 
 # Hex identifier used for construct references in JSON packages.

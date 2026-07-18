@@ -37,12 +37,12 @@ def field_shape(field: FieldInfo) -> FieldShape:
 
 
 def _analyze_annotation(annotation: object, *, metadata: Sequence[object]) -> FieldShape:
-    metadata_expected = _metadata_expected_kinds(metadata)
+    metadata_expected = metadata_expected_kinds(metadata)
     origin = get_origin(annotation)
 
     if origin is Annotated:
         value_type, *annotated_metadata = get_args(annotation)
-        annotated_expected = _metadata_expected_kinds(annotated_metadata)
+        annotated_expected = metadata_expected_kinds(annotated_metadata)
         expected = _merge_kinds(metadata_expected, annotated_expected)
         if expected:
             return FieldShape(collection=CollectionKind.SCALAR, expected_kinds=expected)
@@ -92,7 +92,7 @@ def _merge_child_encodings(annotations: Sequence[object] | Any) -> FieldShape:
     return FieldShape(collection=collection, expected_kinds=tuple(expected_kinds))
 
 
-def _metadata_expected_kinds(metadata: Sequence[object]) -> tuple[str, ...]:
+def metadata_expected_kinds(metadata: Sequence[object]) -> tuple[str, ...]:
     expected: list[str] = []
     for item in metadata:
         raw = getattr(item, "expected_kind", None)

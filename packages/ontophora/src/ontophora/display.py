@@ -1,10 +1,15 @@
-"""Construct display helpers — canonical field priority for labels and IRIs."""
+"""Construct display helpers — canonical field priority for labels and IRIs.
+
+This module is a leaf: it must not import from ``ontophora.constructs`` so
+that ``BaseConstruct`` itself can build its terminal and notebook renderings
+on top of these helpers.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 
-from ontophora.constructs.base import BaseConstruct
+from pydantic import BaseModel
 
 CONSTRUCT_IRI_FIELDS = ("iri", "ontology_iri", "version_iri")
 CONSTRUCT_LABEL_FIELDS = (
@@ -18,7 +23,7 @@ CONSTRUCT_LABEL_FIELDS = (
 DEFAULT_COMPACT_DISPLAY_LIMIT = 48
 
 
-def construct_display_iri(construct: BaseConstruct) -> str | None:
+def construct_display_iri(construct: BaseModel) -> str | None:
     """Return the first non-empty IRI-like string field from a construct."""
     return first_display_field(
         {field_name: getattr(construct, field_name, None) for field_name in CONSTRUCT_IRI_FIELDS},
@@ -26,7 +31,7 @@ def construct_display_iri(construct: BaseConstruct) -> str | None:
     )
 
 
-def construct_display_label(construct: BaseConstruct) -> str | None:
+def construct_display_label(construct: BaseModel) -> str | None:
     """Return the first non-empty identifying string field from a construct."""
     return first_display_field(
         {field_name: getattr(construct, field_name, None) for field_name in CONSTRUCT_LABEL_FIELDS},
@@ -35,7 +40,7 @@ def construct_display_label(construct: BaseConstruct) -> str | None:
 
 
 def compact_display_label(
-    construct: BaseConstruct, *, limit: int = DEFAULT_COMPACT_DISPLAY_LIMIT
+    construct: BaseModel, *, limit: int = DEFAULT_COMPACT_DISPLAY_LIMIT
 ) -> str | None:
     """Return a length-limited display label with IRI fragment/path compaction.
 
@@ -66,7 +71,7 @@ def compact_display_value(value: str, *, limit: int = DEFAULT_COMPACT_DISPLAY_LI
         tail = trimmed.rsplit("/", 1)[-1]
     if tail:
         trimmed = tail
-    return trimmed if len(trimmed) <= limit else f"{trimmed[: limit - 1]}..."
+    return trimmed if len(trimmed) <= limit else f"{trimmed[: limit - 3]}..."
 
 
 __all__ = [

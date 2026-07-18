@@ -5,12 +5,22 @@ from typing import Annotated, TypeAlias
 
 from pydantic import AfterValidator, StringConstraints
 
+# Character classes transcribed from the SPARQL 1.1 grammar
+# (https://www.w3.org/TR/sparql11-query/#rPN_CHARS_BASE), which OWL 2
+# Structural Specification section 2.1 references for abbreviated IRIs,
+# prefix names, and node IDs. Shared with ontophora.constructs.types so the
+# abbreviated-IRI grammar and the PrefixDeclaration grammar cannot drift.
+PN_CHARS_BASE = "A-Za-zÀ-ÖØ-öø-˿Ͱ-ͽͿ-῿‌-‍⁰-↏Ⰰ-⿯、-퟿豈-﷏ﷰ-�\U00010000-\U000effff"
+PN_CHARS_U = PN_CHARS_BASE + "_"
+PN_CHARS = PN_CHARS_U + "\\-0-9·̀-ͯ‿-⁀"
+PN_PREFIX = rf"[{PN_CHARS_BASE}](?:[{PN_CHARS}.]*[{PN_CHARS}])?"
+
 _IRI_FORBIDDEN_CHARS = set(' <>"{}|^`\\')
 _FULL_IRI_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:[^\s<>\"{}|^`\\]+$")
-_PREFIX_NAME_BODY_RE = re.compile(r"^(?:|[A-Za-z_](?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9_-]))*)$")
-_PN_LOCAL_RE = re.compile(
-    r"^(?:[A-Za-z0-9_]|[A-Za-z0-9_](?:[A-Za-z0-9:_-]|\.(?=[A-Za-z0-9:_-]))*[A-Za-z0-9:_-])$"
-)
+_PREFIX_NAME_BODY_RE = re.compile(rf"(?:{PN_PREFIX})?")
+# SPARQL PN_LOCAL without the PLX escape forms (percent- and backslash-escapes),
+# which this package does not support anywhere.
+_PN_LOCAL_RE = re.compile(rf"[{PN_CHARS_U}0-9:](?:[{PN_CHARS}.:]*[{PN_CHARS}:])?")
 
 
 def _unwrap_bracketed_full_iri(value: str) -> str:

@@ -61,7 +61,7 @@ def test_uid_normalizes_hex_strings(value: str, expected: str) -> None:
     assert TypeAdapter(UID).validate_python(value) == expected
 
 
-@pytest.mark.parametrize("value", ["", "1234abcd", "0x", "0xnothex"])
+@pytest.mark.parametrize("value", ["", "1234abcd", "0x", "0xnothex", "0x_12", "0x12\n", " 0x12"])
 def test_uid_rejects_invalid_hex_strings(value: str) -> None:
     with pytest.raises(ValidationError):
         TypeAdapter(UID).validate_python(value)

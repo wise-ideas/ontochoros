@@ -9,9 +9,11 @@ from typing import Any, Final
 
 from pydantic import BaseModel
 
+from ontophora._canonical import unordered_sort_key
 from ontophora._field_encoding import (
     CollectionKind,
     field_shape,
+    metadata_expected_kinds,
 )
 from ontophora._field_encoding import (
     field_collection_kind as derive_field_collection_kind,
@@ -127,7 +129,7 @@ def _iter_reference_values_unordered(
     path: str,
     endpoint_order: int | None,
 ) -> Iterable[ReferenceEntry]:
-    for index, item in enumerate(sorted(value, key=_unordered_value_sort_key)):
+    for index, item in enumerate(sorted(value, key=unordered_sort_key)):
         yield from _iter_reference_values(
             item,
             expected_kind=expected_kind,
@@ -158,34 +160,12 @@ def _expected_kind_for_field(model: BaseModel, field_name: str, field: Any) -> E
         expected_kinds = field_shape(field).expected_kinds
         if expected_kinds:
             return expected_kind_to_tuple(expected_kinds)
-    kinds: list[str] = []
-    for item in getattr(field, "metadata", ()):
-        raw = getattr(item, "expected_kind", None)
-        values = raw if isinstance(raw, tuple) else (raw,)
-        for value in values:
-            if isinstance(value, str) and value not in kinds:
-                kinds.append(value)
-    return expected_kind_to_tuple(tuple(kinds)) or None
+    return metadata_expected_kinds(getattr(field, "metadata", ())) or None
 
 
 def _edge_key_from_path(path: str) -> str:
     field_path = path.rsplit(".", 1)[-1]
     return field_path.split("[", 1)[0].split("{", 1)[0]
-
-
-@singledispatch
-def _unordered_value_sort_key(value: Any) -> str:
-    return repr(value)
-
-
-@_unordered_value_sort_key.register(ReferenceValue)
-def _unordered_value_sort_key_reference(value: ReferenceValue) -> str:
-    return str(value.uid)
-
-
-@_unordered_value_sort_key.register(BaseModel)
-def _unordered_value_sort_key_model(value: BaseModel) -> str:
-    return value.model_dump_json()
 
 
 __all__ = [

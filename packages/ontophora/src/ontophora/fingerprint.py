@@ -17,11 +17,12 @@ from ontophora.reference import ReferenceValue
 @dataclass(slots=True)
 class _FingerprintContext:
     cache: dict[str, str]
-    in_progress: frozenset[str]
+    path: tuple[str, ...]
+    open_cycle_targets: set[str]
 
     @classmethod
     def new(cls) -> _FingerprintContext:
-        return cls(cache={}, in_progress=frozenset())
+        return cls(cache={}, path=(), open_cycle_targets=set())
 
 
 def fingerprint_construct(
@@ -51,11 +52,12 @@ def _fingerprint_construct(
     uid = str(record.uid)
     if uid in ctx.cache:
         return ctx.cache[uid]
-    if uid in ctx.in_progress:
-        payload = json.dumps({"$cycle": uid}, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-    inner_ctx = _FingerprintContext(cache=ctx.cache, in_progress=ctx.in_progress | {uid})
+    inner_ctx = _FingerprintContext(
+        cache=ctx.cache,
+        path=ctx.path + (uid,),
+        open_cycle_targets=ctx.open_cycle_targets,
+    )
     # Exclude uid: fingerprints are content-addressed, not identity-addressed.
     fields = sorted(k for k in record.__class__.model_fields if k != "uid")
     normalized = {
@@ -63,7 +65,13 @@ def _fingerprint_construct(
     }
     payload = json.dumps(normalized, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    ctx.cache[uid] = digest
+    # A cycle member's digest depends on where the traversal entered the
+    # cycle, so only records whose subtree neither sits inside an unclosed
+    # cycle nor closes one at this record are cacheable.
+    is_cycle_member = uid in ctx.open_cycle_targets
+    ctx.open_cycle_targets.discard(uid)
+    if not is_cycle_member and not ctx.open_cycle_targets:
+        ctx.cache[uid] = digest
     return digest
 
 
@@ -83,8 +91,11 @@ def _normalize_reference_value(
     ctx: _FingerprintContext,
 ) -> object:
     ref_uid = str(value.uid)
-    if ref_uid in ctx.in_progress:
-        return {"$cycle": ref_uid}
+    if ref_uid in ctx.path:
+        # Encode the back-reference by its distance up the traversal path, not
+        # by uid, so cyclic structures stay content-addressed.
+        ctx.open_cycle_targets.add(ref_uid)
+        return {"$cycle": len(ctx.path) - ctx.path.index(ref_uid)}
     if ref_uid in record_index:
         return {"$ref": _fingerprint_construct(record_index[ref_uid], record_index, ctx)}
     return {"$ref": ref_uid}

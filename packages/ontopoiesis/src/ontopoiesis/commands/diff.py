@@ -52,7 +52,7 @@ def diff(
     rows = diff_projections(before_path, after_path)
 
     if output_path is not None:
-        output_path.write_text(_render_diff_rows(rows, output_format))
+        output_path.write_text(_render_diff_rows(rows, output_format), encoding="utf-8")
     elif not rows:
         print_notice("No differences found.")
     elif output_format == "json":

@@ -29,3 +29,13 @@ def test_construct_registry_reports_abstract_groups() -> None:
     assert "Individual" in by_kind["NamedIndividual"].abstract_groups
     assert "ObjectPropertyAxiom" in by_kind["FunctionalObjectProperty"].abstract_groups
     assert "ObjectPropertyExpression" in by_kind["ObjectInverseOf"].abstract_groups
+
+
+def test_axioms_are_not_blank_nodes() -> None:
+    # Blank nodes are anonymous expressions; axioms map to triples in RDF.
+    by_kind = construct_metadata_by_kind()
+
+    for metadata in by_kind.values():
+        if "Axiom" in metadata.abstract_groups:
+            assert not metadata.is_blank_node, metadata.kind
+    assert by_kind["ObjectSomeValuesFrom"].is_blank_node

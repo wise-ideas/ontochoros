@@ -22,17 +22,30 @@ def test_coerce_construct_records_validates_record_payloads() -> None:
 def test_model_root_exports_only_curated_construct_surface() -> None:
     exported = set(model.__all__)
 
-    assert "construct_display_label" not in exported
-    assert "construct_display_iri" not in exported
+    # Internal helpers and speculative APIs stay out of the root surface.
     assert "first_display_field" not in exported
-    assert "fingerprint_construct" not in exported
     assert "CollectionKind" not in exported
+    assert "construct_support_manifest" not in exported
+    assert "is_kind_compatible" not in exported
+    assert "unordered_sort_key" not in exported
     assert exported >= {
         "BaseConstruct",
+        "Construct",
+        "ConstructMetadata",
+        "Reference",
+        "ReferenceEntry",
+        "ReferenceValue",
         "UID",
         "coerce_construct",
+        "compact_display_label",
+        "construct_display_iri",
+        "construct_display_label",
         "construct_json_schema",
+        "construct_metadata",
         "construct_types",
+        "fingerprint_construct",
+        "fingerprint_constructs",
+        "iter_construct_references",
     }
     assert {construct_type.__name__ for construct_type in construct_types}.issubset(exported)
 

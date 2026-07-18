@@ -40,6 +40,19 @@ def test_refresh_derived_edges_materializes_relations_from_migrated_structure() 
     assert rows[0]["c"] > 0
 
 
+def test_migration_skips_comment_only_file(tmp_path: Path) -> None:
+    migration = tmp_path / "V0001__notes.cypher"
+    migration.write_text("// only comments here\n\n// nothing to run\n")
+
+    with MigrationRunner() as runner:
+        record = runner.apply_file(migration)
+
+        assert record is not None
+        assert record.migration_id == "V0001"
+        assert runner.node_count == 0
+        assert runner.applied_migrations == ["V0001"]
+
+
 def test_migration_runner_applies_one_file_atomically(tmp_path: Path) -> None:
     migration = tmp_path / "V0001__broken.cypher"
     migration.write_text(

@@ -46,8 +46,14 @@ def main(
 ) -> None:
     """Run the ontopoiesis operator CLI."""
     dotenv.load_dotenv()
+    level_name = (log_level or getenv("LOG_LEVEL", "INFO")).upper()
+    if level_name not in logging.getLevelNamesMapping():
+        raise typer.BadParameter(
+            f"Unknown log level {level_name!r}. Use DEBUG, INFO, WARNING, or ERROR.",
+            param_hint="'--log-level'",
+        )
     logging.basicConfig(
-        level=(log_level or getenv("LOG_LEVEL", "INFO")).upper(),
+        level=level_name,
         format="%(levelname)s %(name)s: %(message)s",
     )
 

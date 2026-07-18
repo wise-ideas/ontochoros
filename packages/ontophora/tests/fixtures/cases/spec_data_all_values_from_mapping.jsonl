@@ -1,5 +1,7 @@
 {"uid":"0x20","construct":{"kind":"Datatype","iri":"http://www.w3.org/2001/XMLSchema#string"}}
 {"uid":"0x21","construct":{"kind":"DataProperty","iri":"http://example.org/hasGivenName"}}
+{"uid":"0x22","construct":{"kind":"DataProperty","iri":"http://example.org/hasFamilyName"}}
 {"uid":"0x23","construct":{"kind":"Declaration","entity":"0x20"}}
 {"uid":"0x24","construct":{"kind":"Declaration","entity":"0x21"}}
-{"uid":"0x26","construct":{"kind":"DataAllValuesFrom","data_property_expression":"0x21","data_range":"0x20"}}
+{"uid":"0x25","construct":{"kind":"Declaration","entity":"0x22"}}
+{"uid":"0x26","construct":{"kind":"DataAllValuesFrom","data_property_expressions":["0x21","0x22"],"data_range":"0x20"}}

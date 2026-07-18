@@ -75,6 +75,14 @@ def test_records_from_json_rejects_uid_in_construct_payload() -> None:
         )
 
 
+def test_records_from_json_rejects_unexpected_record_fields() -> None:
+    with pytest.raises(EnvelopeError, match="record 1 has unexpected fields: extra"):
+        records_from_json(
+            '[{"uid": "0x1", "extra": true, '
+            '"construct": {"kind": "Class", "iri": "https://example.org/A"}}]'
+        )
+
+
 def test_records_to_json_rejects_unregistered_construct() -> None:
     from ontophora import BaseConstruct
 
