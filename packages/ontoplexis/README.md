@@ -4,8 +4,9 @@ Query [OWL 2](https://www.w3.org/TR/owl2-syntax/) ontologies with Cypher.
 
 Ontoplexis loads an OWL/XML document into an embedded
 [Ladybug](https://ladybugdb.com) graph whose shape is the OWL 2 structural
-specification. It exposes raw Cypher over that graph and serializes the graph
-losslessly back to OWL/XML.
+specification, exposes raw Cypher over it, and serializes the graph
+losslessly back to OWL/XML. If you can write a graph query, you can
+introspect, test, diff, and author ontologies — no ontologist's API, no JVM.
 
 ## Scope
 

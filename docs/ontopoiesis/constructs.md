@@ -223,7 +223,7 @@ WHERE s.text = 'http://example.org/MyClass'
 ```
 
 To join straight to the labelled entity instead, use the derived `annotation_value`
-edge (see [derived relations](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/)),
+edge (see [derived relations](../ontoplexis/reference/derived.md)),
 which connects the entity node directly to the literal.
 
 ### Ontology and document nodes
@@ -257,7 +257,7 @@ ORDER BY position
 The tables below make `constructs.md` the single lookup for which edge roles a construct
 uses in the projection. Roles are the short query-facing names assigned by the parent
 kind and child position; the canonical source is the
-[Ontoplexis edge-roles reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/roles/).
+[Ontoplexis edge-roles reference](../ontoplexis/reference/roles.md).
 Where a role appears more than once (n-ary operands, chain steps), the edges are
 distinguished by `position`.
 

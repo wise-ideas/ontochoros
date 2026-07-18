@@ -47,7 +47,6 @@ Changelog = "https://github.com/wise-ideas/ontotheke/releases?q=ontopoiesis"
 dev = [
     "ruff",
     "ty",
-    "zensical",
 ]
 
 [tool.uv.sources]

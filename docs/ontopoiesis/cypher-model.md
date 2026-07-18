@@ -70,7 +70,7 @@ kind and the child's position among its arguments:
 | `value`      | The value in an `AnnotationAssertion`                  |
 
 The full role vocabulary — every construct and the roles it uses — is the
-[Ontoplexis edge-roles reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/roles/),
+[Ontoplexis edge-roles reference](../ontoplexis/reference/roles.md),
 mirrored per construct in the [constructs reference](constructs.md#structural-edge-roles).
 Roles are decoration; the property that actually round-trips is `position`.
 
@@ -95,7 +95,7 @@ RETURN a.iri AS sub_iri, b.iri AS super_iri
 `D` is a refreshable cache over `N`/`E` — asserted structure only, no
 reasoning — and is rebuilt by `ontopoiesis build` and `ontopoiesis migrate`.
 Export and diff never read it. The relation vocabulary is documented in the
-[Ontoplexis derived-relations reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/).
+[Ontoplexis derived-relations reference](../ontoplexis/reference/derived.md).
 
 ## Why this shape helps
 

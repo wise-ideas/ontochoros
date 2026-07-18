@@ -453,7 +453,7 @@ ORDER BY entity, lang
 
 The derived `annotation_value` edge collapses this to one hop, joining the labelled
 entity node straight to its literal — see the
-[derived-relations reference](https://wise-ideas.github.io/ontotheke/ontoplexis/reference/derived/).
+[derived-relations reference](../ontoplexis/reference/derived.md).
 
 Deprecated entities:
 

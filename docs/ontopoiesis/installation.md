@@ -13,7 +13,7 @@ uv add ontopoiesis
 ```
 
 This installs the `ontopoiesis` CLI and its dependencies, including
-[ontoplexis](https://wise-ideas.github.io/ontotheke/ontoplexis/) (the OWL/XML ⇄
+[ontoplexis](../ontoplexis/index.md) (the OWL/XML ⇄
 projection core) and the embedded Ladybug database.
 
 Optional extras:

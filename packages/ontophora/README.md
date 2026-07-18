@@ -4,8 +4,10 @@ Typed [Pydantic](https://docs.pydantic.dev/) models for the [OWL 2 structural
 specification](https://www.w3.org/TR/owl2-syntax/).
 
 Ontophora represents OWL entities, expressions, axioms, and ontology documents
-as validated records. Each record has a UID and a fixed construct kind; records
-refer to one another by UID rather than nesting an object graph.
+as validated records, so an OWL-aware application gets construct-level data
+that checks itself and travels as plain JSON — without parsing an OWL surface
+syntax. Each record has a UID and a fixed construct kind; records refer to one
+another by UID rather than nesting an object graph.
 
 ## Scope
 

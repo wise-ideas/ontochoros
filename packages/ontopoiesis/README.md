@@ -1,11 +1,15 @@
 # Ontopoiesis
 
-The operator CLI for OWL 2 ontology projections.
+Lint, test, diff, and CI for OWL 2 ontologies — manage an ontology like code.
 
-Ontopoiesis builds an OWL/XML ontology into an
-[Ontoplexis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis) projection, then runs
-the day-to-day workflows around that projection: query, lint, test, diff,
-impact analysis, render, migrate, and export.
+Ontopoiesis builds an OWL/XML ontology into a Cypher-queryable
+[Ontoplexis](https://github.com/wise-ideas/ontotheke/tree/main/packages/ontoplexis)
+projection, then runs the day-to-day workflows around that one artifact:
+query, lint, test, diff, impact analysis, render, migrate, and export.
+Quality gates are plain `.cypher` files that fail when they return rows, so
+teams extend the rule set the way they write dbt tests — and the stock
+baseline alone finds shipping defects in production ontologies
+([why this exists](https://wise-ideas.github.io/ontotheke/why/)).
 
 ## Scope
 

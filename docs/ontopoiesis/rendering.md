@@ -27,7 +27,7 @@ displays inline in most documentation platforms and chat clients.
 With no entity IRIs, the entire projection is rendered:
 
 ```bash
-uv run ontopoiesis build docs/family.owlxml -o /tmp/family.lbug
+uv run ontopoiesis build docs/ontopoiesis/family.owlxml -o /tmp/family.lbug
 uv run ontopoiesis render /tmp/family.lbug -o /tmp/family.svg
 ```
 

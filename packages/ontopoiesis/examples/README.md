@@ -12,7 +12,7 @@ These small sources ship with the repository and are ready to build:
 | `dublincore.owl` | Dublin Core metadata terms |
 | `foaf.owl` | Friend of a Friend |
 | `goslim_generic.owl` | GO generic subset (slim) |
-| `SCTO.owl` | Swiss Clinical Trial Organisation ontology |
+| `SCTO.owl` | SNOMED CT standard ontology (upper-level, OGMS-based) |
 | `schemaorg.rdf` | schema.org (RDF/XML; convert first, e.g. `robot convert`) |
 | `sweetAll.owl` | SWEET Earth and environmental science |
 

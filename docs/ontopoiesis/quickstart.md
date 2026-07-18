@@ -2,17 +2,16 @@
 title: "Quickstart"
 ---
 
-This walkthrough covers the core Ontopoiesis workflow using only bundled sample ontologies.
-If you have not set up Ontopoiesis yet, start with the [installation guide](installation.md).
-
-It focuses on one idea: build a Ladybug projection once, then reuse that graph across
-multiple developer tasks without re-parsing the source ontology.
+This walkthrough runs the core Ontopoiesis workflow against bundled sample
+ontologies. It teaches one idea: build a projection once, then reuse that graph
+across every developer task — query, lint, diff, impact — without re-parsing the
+source ontology.
 
 ## Prerequisites
 
-This quickstart assumes you are running from the repository root with the development
-environment already set up. If you have not done that yet, start with the
-[installation guide](installation.md).
+This quickstart assumes you are running from the repository root with the
+development environment already set up. If you have not done that yet, start
+with the [installation guide](installation.md).
 
 You need:
 
@@ -30,16 +29,13 @@ make sync
 Start with the bundled family ontology:
 
 ```bash
-uv run ontopoiesis build docs/family.owlxml -o /tmp/family.lbug
+uv run ontopoiesis build docs/ontopoiesis/family.owlxml -o /tmp/family.lbug
 ```
 
-On the current sample this produces a small graph projection with 47 nodes and 63 edges.
-
-What this gives you:
-
-- a queryable `.lbug` graph
-- one reusable artifact for querying, linting, tests, diffing, and impact analysis
-- no need to re-parse the OWL document on each subsequent command
+On the current sample this produces a small graph projection with 47 nodes and
+63 edges. That `.lbug` file is the artifact every later step reuses — querying,
+linting, tests, diffing, and impact analysis all read it directly, so no
+subsequent command re-parses the OWL document.
 
 ## 2. Interrogate The Graph With Cypher
 
@@ -93,19 +89,17 @@ No lint violations found.
 ╰─────────────────╯
 ```
 
-What this shows:
-
-- Ontopoiesis treats the built projection as a shared quality-control surface
-- lint rules are just Cypher checks over the same graph you query directly
-- teams can keep the default baseline conservative, then extend it with project-specific checks
+Lint rules are Cypher checks over the same graph you queried in step 2 — the
+projection doubles as a quality-control surface. Teams keep the default
+baseline conservative, then extend it with project-specific checks.
 
 ## 4. Compare Ontology Versions Semantically
 
 Now build two small pizza ontology versions:
 
 ```bash
-uv run ontopoiesis build docs/pizza.owlxml -o /tmp/pizza_v1.lbug
-uv run ontopoiesis build docs/pizza_v2.owlxml -o /tmp/pizza_v2.lbug
+uv run ontopoiesis build docs/ontopoiesis/pizza.owlxml -o /tmp/pizza_v1.lbug
+uv run ontopoiesis build docs/ontopoiesis/pizza_v2.owlxml -o /tmp/pizza_v2.lbug
 ```
 
 Then diff the two projections:
@@ -131,9 +125,6 @@ places it under `Pizza`. The diff fingerprints constructs structurally, so uncha
 axioms and the ontology wrapper produce no rows — only genuine additions and removals
 appear. If the diff output is empty, the two projections were built from the same source
 file.
-
-This is useful because Ontopoiesis is diffing OWL constructs in the projection, not source
-file formatting.
 
 ## 5. Trace Impact
 
@@ -182,7 +173,7 @@ projection — supports all of them.
 ## Troubleshooting
 
 **Step 2 returns empty results or unexpected kinds.** The projection may have been built
-from a different file. Confirm the build command used `docs/family.owlxml` as the
+from a different file. Confirm the build command used `docs/ontopoiesis/family.owlxml` as the
 source. To verify the projection directly, run:
 
 ```bash
@@ -192,7 +183,7 @@ uv run ontopoiesis query /tmp/family.lbug -q "MATCH (n:N) RETURN DISTINCT n.kind
 The output should match the kinds listed in step 2.
 
 **Step 3 fails instead of passing.** The projection was not built cleanly. Rebuild it
-from scratch: `ontopoiesis build docs/family.owlxml -o /tmp/family.lbug` and re-run
+from scratch: `ontopoiesis build docs/ontopoiesis/family.owlxml -o /tmp/family.lbug` and re-run
 `ontopoiesis lint /tmp/family.lbug`.
 
 **Step 4 shows no rows.** This is expected when the two projections are semantically
@@ -200,5 +191,5 @@ identical. If you are expecting substantive differences, confirm the two source 
 differ:
 
 ```bash
-diff docs/pizza.owlxml docs/pizza_v2.owlxml
+diff docs/ontopoiesis/pizza.owlxml docs/ontopoiesis/pizza_v2.owlxml
 ```

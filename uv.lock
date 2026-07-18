@@ -210,7 +210,6 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [package.metadata]
@@ -224,7 +223,6 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [[package]]
@@ -241,7 +239,6 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [package.metadata]
@@ -255,7 +252,6 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [[package]]
@@ -275,7 +271,6 @@ dependencies = [
 dev = [
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [package.metadata]
@@ -292,13 +287,22 @@ requires-dist = [
 dev = [
     { name = "ruff" },
     { name = "ty" },
-    { name = "zensical" },
 ]
 
 [[package]]
 name = "ontotheke"
 version = "0.0.0"
 source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "zensical" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "zensical" }]
 
 [[package]]
 name = "packaging"

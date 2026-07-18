@@ -56,15 +56,7 @@ fetch-robot:
 	fi
 
 docs:
-	rm -rf site
-	mkdir -p site/ontophora site/ontoplexis site/ontopoiesis
-	cp docs/index.html site/index.html
-	uv run --directory packages/ontophora zensical build --clean --strict
-	cp -R packages/ontophora/site/. site/ontophora/
-	uv run --directory packages/ontoplexis zensical build --clean --strict
-	cp -R packages/ontoplexis/site/. site/ontoplexis/
-	uv run --directory packages/ontopoiesis zensical build --clean --strict
-	cp -R packages/ontopoiesis/site/. site/ontopoiesis/
+	uv run zensical build --clean --strict
 
 clean:
 	rm -rf .cache .venv site

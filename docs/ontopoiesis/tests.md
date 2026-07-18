@@ -29,7 +29,7 @@ ontology. The example intentionally fails — the sample data contains one negat
 `hasDaughter` assertion, from `Bill` to `Susan`.
 
 ```cypher
---8<-- "docs/tests/test_negative_property_assertions.cypher"
+--8<-- "docs/ontopoiesis/tests/test_negative_property_assertions.cypher"
 ```
 
 Store the query at `tests/test_negative_property_assertions.cypher`, build the
@@ -68,7 +68,7 @@ being outright errors. The Primer sample contains `NarcisticPerson`, defined wit
 `ObjectHasSelf` restriction over `loves`:
 
 ```cypher
---8<-- "docs/tests/warn_self_referential_definitions.cypher"
+--8<-- "docs/ontopoiesis/tests/warn_self_referential_definitions.cypher"
 ```
 
 ```bash

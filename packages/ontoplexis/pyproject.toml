@@ -42,7 +42,6 @@ dev = [
     "pytest",
     "ruff",
     "ty",
-    "zensical",
 ]
 
 [tool.setuptools.packages.find]

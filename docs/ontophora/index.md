@@ -4,15 +4,14 @@ title: Ontophora
 
 # Ontophora
 
-Ontophora provides typed [Pydantic](https://docs.pydantic.dev/) models for the
-[OWL 2 structural specification](https://www.w3.org/TR/owl2-syntax/). It gives
-an OWL-aware application a compact, validated representation of entities,
-expressions, axioms, and ontology documents without parsing or serializing an
-OWL surface syntax.
+Ontophora gives your application a typed, validated representation of OWL 2 —
+[Pydantic](https://docs.pydantic.dev/) models for every construct in the
+[OWL 2 structural specification](https://www.w3.org/TR/owl2-syntax/) — without
+making you parse or serialize an OWL surface syntax.
 
 Every construct is a record with a `uid` and a discriminating `kind`. Records
-point to one another by UID, so a package can preserve the structural graph
-without embedding the same construct repeatedly.
+point to one another by UID, so a package preserves the structural graph
+without embedding the same construct repeatedly:
 
 ```python
 from ontophora import Klass, SubClassOf
@@ -25,6 +24,15 @@ subclass = SubClassOf(
     super_class_expression=animal.uid,
 )
 ```
+
+## Who this is for
+
+Reach for Ontophora when you are building an OWL-aware application — an
+editor backend, an API, a pipeline stage — and want construct-level data that
+validates itself and moves between systems as plain JSON. If you want to
+query or transform a whole ontology, the sibling projects
+[Ontoplexis](../ontoplexis/index.md) (library) and Ontopoiesis (CLI) cover
+that; Ontophora depends on neither.
 
 ## What it provides
 
@@ -39,8 +47,8 @@ subclass = SubClassOf(
 
 Ontophora does not parse OWL/XML, Turtle, or RDF/XML; reason over ontologies;
 or resolve references into an object graph. Those operations belong to the
-application that owns the package. For an OWL/XML-to-graph workflow, see the
-sibling project [Ontoplexis](https://wise-ideas.github.io/ontotheke/ontoplexis/).
+application that owns the package. For an OWL/XML-to-graph workflow, see
+[Ontoplexis](../ontoplexis/index.md).
 
 ## Start here
 

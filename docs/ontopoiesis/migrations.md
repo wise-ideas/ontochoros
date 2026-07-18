@@ -44,7 +44,7 @@ arriving at it incrementally.
 ### V0001 — Declare the ontology
 
 ```cypher
---8<-- "docs/migrations/V0001__init_ontology.cypher"
+--8<-- "docs/ontopoiesis/migrations/V0001__init_ontology.cypher"
 ```
 
 ### V0002 — Class hierarchy
@@ -56,19 +56,19 @@ arriving at it incrementally.
 > ontology structure.
 
 ```cypher
---8<-- "docs/migrations/V0002__class_hierarchy.cypher"
+--8<-- "docs/ontopoiesis/migrations/V0002__class_hierarchy.cypher"
 ```
 
 ### V0003 — Object property
 
 ```cypher
---8<-- "docs/migrations/V0003__properties.cypher"
+--8<-- "docs/ontopoiesis/migrations/V0003__properties.cypher"
 ```
 
 ### V0004 — Individuals and assertions
 
 ```cypher
---8<-- "docs/migrations/V0004__individuals.cypher"
+--8<-- "docs/ontopoiesis/migrations/V0004__individuals.cypher"
 ```
 
 ### Running the migrations
@@ -235,7 +235,7 @@ This template defines a `subclass` macro that generates an idempotent `SubClassO
 axiom from two IRIs:
 
 ```cypher
---8<-- "docs/templates/subclass_axioms.cypher"
+--8<-- "docs/ontopoiesis/templates/subclass_axioms.cypher"
 ```
 
 ### Sharing macros across migrations

@@ -35,4 +35,4 @@ Status for OWL 2 Primer and OWL 2 Test documents:
 
 - W3C Recommendation, 11 December 2012
 
-See `docs/third-party-notices.md` for the canonical notice text and file mapping.
+See the package's `NOTICE` file for the canonical notice text.

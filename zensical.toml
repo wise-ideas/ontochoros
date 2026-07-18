@@ -1,0 +1,132 @@
+[project]
+site_name = "Ontotheke"
+site_description = "OWL 2 tooling: typed constructs, lossless graph mapping, and an operator toolchain"
+site_url = "https://wise-ideas.github.io/ontotheke/"
+repo_url = "https://github.com/wise-ideas/ontotheke"
+docs_dir = "docs"
+
+nav = [
+  { "Home" = "index.md" },
+  { "Why Ontotheke" = "why.md" },
+  { "Ontophora" = [
+    { "Getting Started" = [
+      { "Introduction" = "ontophora/index.md" },
+      { "Build an ontology package" = "ontophora/tutorials/first-package.md" },
+    ]},
+    { "How-to Guides" = [
+      { "Read and write JSON" = "ontophora/how-to/json.md" },
+      { "Inspect the supported model" = "ontophora/how-to/inspect-model.md" },
+    ]},
+    { "Explanation" = [
+      { "The model" = "ontophora/explanation/model.md" },
+    ]},
+    { "Reference" = [
+      { "Public API" = "ontophora/reference/api.md" },
+      { "Construct catalog" = "ontophora/reference/constructs.md" },
+      { "JSON package format" = "ontophora/reference/json-format.md" },
+    ]},
+  ]},
+  { "Ontoplexis" = [
+    { "Getting Started" = [
+      { "Introduction" = "ontoplexis/index.md" },
+      { "Quickstart" = "ontoplexis/quickstart.md" },
+    ]},
+    { "Concepts" = [
+      { "The Design" = "ontoplexis/concepts/design.md" },
+      { "The Graph Schema" = "ontoplexis/concepts/schema.md" },
+    ]},
+    { "How-to Guides" = [
+      { "Query a Projection" = "ontoplexis/howto/query.md" },
+      { "Author with Cypher" = "ontoplexis/howto/author.md" },
+      { "Work with Other Formats" = "ontoplexis/howto/documents.md" },
+    ]},
+    { "Reference" = [
+      { "Public API" = "ontoplexis/reference/api.md" },
+      { "Edge Roles" = "ontoplexis/reference/roles.md" },
+      { "Derived Relations" = "ontoplexis/reference/derived.md" },
+    ]},
+    { "Contributing" = [
+      { "Development Setup" = "ontoplexis/contrib/setup.md" },
+    ]},
+  ]},
+  { "Ontopoiesis" = [
+    { "Getting Started" = [
+      { "Introduction" = "ontopoiesis/index.md" },
+      { "Installation" = "ontopoiesis/installation.md" },
+      { "Quickstart" = "ontopoiesis/quickstart.md" },
+      { "Working with a Real Ontology" = "ontopoiesis/go-slim.md" },
+      { "Case Studies" = "ontopoiesis/case-studies.md" },
+    ]},
+    { "How-to Guides" = [
+      { "CI" = "ontopoiesis/ci.md" },
+      { "Diff" = "ontopoiesis/diff.md" },
+      { "Impact" = "ontopoiesis/impact.md" },
+      { "Migrations" = "ontopoiesis/migrations.md" },
+      { "Rendering" = "ontopoiesis/rendering.md" },
+      { "Lint" = "ontopoiesis/lint.md" },
+      { "Tests" = "ontopoiesis/tests.md" },
+    ]},
+    { "Reference" = [
+      { "CLI" = "ontopoiesis/cli.md" },
+      { "Queries" = "ontopoiesis/queries.md" },
+      { "Construct Coverage" = "ontopoiesis/constructs.md" },
+      { "Projection Model" = "ontopoiesis/cypher-model.md" },
+      { "Lint Rules" = "ontopoiesis/lint-rules.md" },
+      { "Glossary" = "ontopoiesis/glossary.md" },
+    ]},
+    { "Contributing" = [
+      { "Overview" = "ontopoiesis/contrib/index.md" },
+      { "Package Architecture" = "ontopoiesis/contrib/package.md" },
+    ]},
+  ]},
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "content.code.annotate",
+  "content.tabs.link",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.snippets]
+base_path = "."
+[project.markdown_extensions.pymdownx.superfences]
+[[project.markdown_extensions.pymdownx.superfences.custom_fences]]
+name = "mermaid"
+class = "mermaid"
+format = "pymdownx.superfences.fence_code_format"
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
