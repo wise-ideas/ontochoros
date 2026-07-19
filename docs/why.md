@@ -2,17 +2,17 @@
 title: "Why Ontochoros"
 ---
 
-# Why manage ontologies like code
+# Why Ontochoros exists
 
-Your team already knows how to keep software healthy. Every change goes
-through version control, a reviewable diff, automated tests, and CI. Nothing
-ships because one expert eyeballed it and said it looked fine.
+Software changes go through version control, a reviewable diff, automated
+tests, and CI. Nothing ships because one expert eyeballed it and said it
+looked fine.
 
 Ontologies rarely get any of that. A curator edits the file in a GUI, a
 reviewer scrolls a thousand-line XML diff, and a specialist runs a reasoner
-that answers only one kind of question. The result is predictable: widely
-used ontologies, maintained for decades by careful people, quietly accumulate
-structural defects that no reviewer could have spotted by reading.
+that answers only one kind of question. The result: widely used ontologies,
+maintained for decades by careful people, accumulate structural defects of a
+kind that line-level review does not catch.
 
 Ontochoros closes that gap. It treats an ontology the way dbt treats a
 warehouse: as typed data behind an engineering workflow — build, query,
@@ -37,11 +37,37 @@ question about the ontology becomes a Cypher query:
 - **Nothing is lost.** The graph serializes back to OWL/XML byte-faithfully
   in structure, so the projection is a working surface, not a lossy export.
 
-## The evidence: stock lint, real defects
+## Why not SPARQL over the triples?
 
-Skepticism is fair — every tool promises to find problems. So here is what
-the bundled lint baseline finds in production ontologies, with an honest
-account of how existing tools fare:
+An ontology is already a graph in RDF, so the obvious alternative is to load
+the triples and query with SPARQL. For structural questions, though, the RDF
+encoding is the wrong graph: the OWL-to-RDF mapping reifies annotated
+axioms, chains every collection through `rdf:first`/`rdf:rest`, and scatters
+class expressions across blank nodes. A question about one axiom becomes a
+query about encoding artifacts. The projection here has the shape of the
+OWL 2 structural specification instead — one node per axiom, expression, or
+entity, with ordered edges for their slots — so the query you write names
+the construct you mean. [The design](ontoplexis/concepts/design.md) works
+through this in detail.
+
+## Why not ROBOT?
+
+For two of its jobs, do use it: reasoning and format conversion stay with
+ROBOT, and `ontopoiesis reason` and `ontopoiesis convert` are thin shims
+over a user-provided ROBOT jar. What ROBOT does not provide is an open
+query surface over ontology structure. `robot report` runs a fixed rule
+set, and most of the findings below fall outside it; extending it means
+writing SPARQL for `robot verify`, which queries the RDF encoding with the
+costs described above. Here, lint rules and tests are Cypher files over the
+structural graph, and that same graph stays open for the follow-up
+question a fixed report cannot anticipate. The toolchain is also pure
+Python — the JVM enters only when you opt into the ROBOT shims.
+
+## What the stock lint rules find
+
+Three findings from running the bundled lint baseline against production
+ontologies, each with an account of how existing tools fare on the same
+input:
 
 **FoaF is not OWL 2 DL.** Six FoaF properties are declared both
 `owl:DatatypeProperty` and `owl:InverseFunctionalProperty` — a characteristic
@@ -100,11 +126,11 @@ no server to stand up, nothing hosted.
 
 ## Who this is for
 
-You will feel at home here if you already think in lint–test–diff–CI loops:
+Ontochoros is aimed at people who already work in lint–test–diff–CI loops:
 a data engineer handed an ontology to maintain, a knowledge-graph engineer
 who writes Cypher, or a curator who wants pull requests reviewed on
-structure instead of XML. You need no ontologist's API — if you can write a
-graph query, you can interrogate, test, and author an ontology.
+structure instead of XML. There is no ontologist's API to learn — if you can
+write a graph query, you can interrogate, test, and author an ontology.
 
 ## Where to start
 

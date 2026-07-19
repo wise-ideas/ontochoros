@@ -1,6 +1,6 @@
 # Ontopoiesis
 
-Lint, test, diff, and CI for OWL 2 ontologies — manage an ontology like code.
+Lint, test, diff, and CI for OWL 2 ontologies, from a single command line.
 
 Ontopoiesis builds an OWL/XML ontology into a Cypher-queryable
 [Ontoplexis](https://github.com/wise-ideas/ontochoros/tree/main/packages/ontoplexis)

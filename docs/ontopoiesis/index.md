@@ -4,8 +4,8 @@ title: "Ontopoiesis"
 
 # Ontopoiesis
 
-Ontopoiesis is the command line you run to manage an ontology like code. It
-builds an OWL/XML document into a Cypher-queryable
+Ontopoiesis is the operator CLI of the Ontochoros stack. It builds an
+OWL/XML document into a Cypher-queryable
 [Ontoplexis](../ontoplexis/index.md) projection, then gives you the
 day-to-day workflows around that one artifact — query, lint, test, diff,
 impact analysis, rendering, and Cypher migrations:
