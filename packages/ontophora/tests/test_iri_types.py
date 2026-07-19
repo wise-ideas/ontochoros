@@ -16,11 +16,10 @@ from ontophora.constructs.types import (
 
 
 def _load_fixture(name: str) -> list:
-    from ontophora.envelope import records_from_json
+    from ontophora.envelope import records_from_jsonl
 
     fixture_path = Path(__file__).parent / "fixtures" / "cases" / name
-    lines = [line for line in fixture_path.read_text().splitlines() if line.strip()]
-    return records_from_json("[" + ",".join(lines) + "]")
+    return records_from_jsonl(fixture_path.read_text())
 
 
 def test_full_iri_accepts_owl_2_primer_prefix_declaration_examples() -> None:

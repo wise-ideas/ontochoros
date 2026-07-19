@@ -5,6 +5,8 @@ import inspect
 import pkgutil
 from pathlib import Path
 
+import pytest
+
 import ontophora.constructs as concrete_package
 from ontophora._registry import (
     construct_json_schema,
@@ -55,3 +57,16 @@ def test_construct_json_schema_uses_discriminator() -> None:
     assert schema["discriminator"]["propertyName"] == "kind"
     assert set(schema["discriminator"]["mapping"]) == set(construct_metadata_by_kind())
     assert "oneOf" in schema
+
+
+def test_construct_json_schema_returns_one_kind_when_asked() -> None:
+    schema = construct_json_schema(kind="SubClassOf")
+
+    assert schema["title"] == "SubClassOf"
+    assert "uid" in schema["properties"]
+    assert "oneOf" not in schema
+
+
+def test_construct_json_schema_rejects_unknown_kind() -> None:
+    with pytest.raises(ValueError, match="Unknown construct kind 'Bogus'"):
+        construct_json_schema(kind="Bogus")

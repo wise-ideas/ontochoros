@@ -295,8 +295,16 @@ def construct(data: dict[str, Any]) -> BaseConstruct:
     return _construct_adapter.validate_python(data)
 
 
-def construct_json_schema(*, mode: JsonSchemaMode = "validation") -> dict[str, object]:
-    return _construct_adapter.json_schema(mode=mode)
+def construct_json_schema(
+    *, mode: JsonSchemaMode = "validation", kind: str | None = None
+) -> dict[str, object]:
+    """Return the JSON Schema for the construct union, or for one *kind*."""
+    if kind is None:
+        return _construct_adapter.json_schema(mode=mode)
+    metadata = construct_metadata_by_kind().get(kind)
+    if metadata is None:
+        raise ValueError(f"Unknown construct kind {kind!r}")
+    return metadata.model_type.model_json_schema(mode=mode)
 
 
 @lru_cache(maxsize=2)

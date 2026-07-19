@@ -12,9 +12,12 @@ Import these names from `ontophora`.
 | `UID` | Validated hexadecimal construct identifier annotation. |
 | `coerce_construct(data)` | Returns `data` if it is a construct; otherwise validates a flat construct dictionary selected by `kind`. |
 | `construct_types` | Ordered tuple of every registered concrete construct model. |
-| `construct_json_schema(mode="validation")` | Returns the JSON Schema for the discriminated construct union. |
+| `construct_json_schema(mode="validation", kind=None)` | Returns the JSON Schema for the discriminated construct union, or for the one construct named by `kind`. |
+| `envelope_json_schema(mode="validation")` | Returns the JSON Schema for the package envelope (an array of `{uid, construct}` records). |
 | `records_from_json(text)` | Decodes a JSON package envelope into construct records. |
 | `records_to_json(records)` | Encodes construct records as a JSON package envelope. |
+| `records_from_jsonl(text)` | Decodes JSONL (one envelope record per line) into construct records. |
+| `records_to_jsonl(records)` | Encodes construct records as JSONL, one envelope record per line. |
 | `EnvelopeError` | Raised when a JSON package has the wrong outer record shape. |
 
 Every model in the [construct catalog](constructs.md) is also imported from

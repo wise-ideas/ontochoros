@@ -44,3 +44,17 @@ decoded. The construct payload must not contain its own `uid`.
 References are structural links only. Decoding validates their UID syntax but
 does not require that the array contains a record with that UID or that the
 target record has the expected kind.
+
+## JSONL variant
+
+`records_to_jsonl` and `records_from_jsonl` exchange the same records as
+JSONL: one envelope record object per line, with blank lines ignored on
+decode. Record shapes and validation match the array format exactly; only the
+outer framing differs.
+
+## Machine-readable schema
+
+`envelope_json_schema()` returns a JSON Schema describing the array format:
+each record requires `uid` and `construct`, and the construct payloads reuse
+the discriminated construct union with the record-level `uid` removed. Use it
+to validate envelopes from non-Python producers.
