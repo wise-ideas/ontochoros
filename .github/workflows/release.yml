@@ -1,11 +1,16 @@
 name: Release package
 
 on:
-  push:
-    tags:
-      - "ontophora-v*"
-      - "ontoplexis-v*"
-      - "ontopoiesis-v*"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish
+        required: true
+        type: choice
+        options:
+          - ontophora
+          - ontoplexis
+          - ontopoiesis
 
 permissions:
   contents: read
@@ -14,7 +19,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      package: ${{ steps.release.outputs.package }}
+      package: ${{ inputs.package }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
@@ -32,34 +38,26 @@ jobs:
         with:
           path: packages/ontoplexis/.cache/robot
           key: robot-1.9.10
-      - id: release
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          case "$TAG" in
-            ontophora-v*) package=ontophora ;;
-            ontoplexis-v*) package=ontoplexis ;;
-            ontopoiesis-v*) package=ontopoiesis ;;
-            *) echo "Release tags must use <package>-v<version>." >&2; exit 1 ;;
-          esac
-          version="${TAG#"$package"-v}"
-          actual="$(uv version --package "$package" --short)"
-          test "$version" = "$actual"
-          printf 'package=%s\n' "$package" >> "$GITHUB_OUTPUT"
       - run: make sync
-      - run: make check-${{ steps.release.outputs.package }}
-      - run: uv build --package "${{ steps.release.outputs.package }}" --out-dir dist --clear
+      - run: make check-${{ inputs.package }}
+      - id: version
+        run: printf 'version=%s\n' "$(date -u +%Y.%-m.%-d)" >> "$GITHUB_OUTPUT"
+      - env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: uv version --frozen --package "$PACKAGE" "$VERSION"
+      - run: uv build --package "${{ inputs.package }}" --out-dir dist --clear
       - run: uvx twine check dist/*
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.release.outputs.package }}-dist
+          name: ${{ inputs.package }}-dist
           path: dist/*
 
   publish:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: pypi-${{ needs.build.outputs.package }}
       url: https://pypi.org/p/${{ needs.build.outputs.package }}
     permissions:
       id-token: write
@@ -82,10 +80,10 @@ jobs:
           path: dist
       - env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ needs.build.outputs.package }}-v${{ needs.build.outputs.version }}
         run: |
           gh release create "$TAG" dist/* \
             --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
             --title "$TAG" \
-            --verify-tag \
             --generate-notes
