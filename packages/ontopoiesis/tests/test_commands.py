@@ -37,6 +37,9 @@ _FOOD_IRI = "https://example.org/pizza#Food"
 @pytest.fixture
 def runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
     monkeypatch.setattr("ontopoiesis.app.dotenv.load_dotenv", lambda: None)
+    # Typer force-enables rich terminal output when GITHUB_ACTIONS is set,
+    # which injects ANSI codes into the output these tests assert on.
+    monkeypatch.setattr("typer.rich_utils.FORCE_TERMINAL", False)
     return CliRunner()
 
 
