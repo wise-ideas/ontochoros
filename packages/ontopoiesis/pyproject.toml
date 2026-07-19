@@ -45,6 +45,7 @@ Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontopoiesis"
 
 [dependency-groups]
 dev = [
+    "pytest-cov",
     "ruff",
     "ty",
 ]

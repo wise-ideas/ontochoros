@@ -39,6 +39,7 @@ Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontophora"
 [dependency-groups]
 dev = [
     "pytest",
+    "pytest-cov",
     "ruff",
     "ty",
 ]

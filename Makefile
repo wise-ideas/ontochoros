@@ -1,4 +1,4 @@
-.PHONY: sync format check check-lock test docs clean fetch-robot check-ontophora check-ontoplexis check-ontopoiesis test-ontophora test-ontoplexis test-ontopoiesis
+.PHONY: sync format check check-lock test docs clean fetch-robot check-ontophora check-ontoplexis check-ontopoiesis test-ontophora test-ontoplexis test-ontopoiesis coverage coverage-ontophora coverage-ontoplexis coverage-ontopoiesis
 
 ROBOT_VERSION := 1.9.10
 ROBOT_JAR := packages/ontoplexis/.cache/robot/robot.jar
@@ -48,6 +48,17 @@ test-ontoplexis: fetch-robot
 
 test-ontopoiesis:
 	uv run --directory packages/ontopoiesis pytest
+
+coverage: coverage-ontophora coverage-ontoplexis coverage-ontopoiesis
+
+coverage-ontophora:
+	uv run --directory packages/ontophora pytest --cov=ontophora --cov-report=term-missing --cov-report=html
+
+coverage-ontoplexis: fetch-robot
+	uv run --directory packages/ontoplexis pytest --cov=ontoplexis --cov-report=term-missing --cov-report=html
+
+coverage-ontopoiesis:
+	uv run --directory packages/ontopoiesis pytest --cov=ontopoiesis --cov-report=term-missing --cov-report=html
 
 fetch-robot:
 	@if [ ! -f $(ROBOT_JAR) ]; then \
