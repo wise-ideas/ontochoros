@@ -7,7 +7,7 @@ This page covers `ontopoiesis` only.
 `ontopoiesis` is the operator CLI and local workflow layer that sits on top of
 `ontoplexis`. It should explain its own modules clearly, then stop at the
 boundary of the reusable core package. If you need the internal architecture of
-`ontoplexis`, read the companion package notes in that repository.
+`ontoplexis`, see its [internals notes](../../ontoplexis/contrib/internals.md).
 
 ## The boundary
 

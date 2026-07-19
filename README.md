@@ -84,16 +84,20 @@ locks the complete development workspace.
 
 ## Releases
 
-Each package versions independently with CalVer (`YYYY.M.patch`) and publishes
-to PyPI under its own name. Release tags identify both the package and its
-version:
+Each package versions independently and publishes to PyPI under its own name.
+Versions are the UTC release date (`YYYY.M.D`), with at most one release per
+package per day.
+
+To release a package, run the release workflow manually from the Actions tab
+and select the package. The workflow runs that package's checks, stamps the
+version, builds and publishes it to PyPI, then creates a tag and GitHub
+release identifying the package and its version:
 
 ```text
-ontophora-v2026.7.0
-ontoplexis-v2026.7.10
-ontopoiesis-v2026.7.0
+ontophora-v2026.7.19
+ontoplexis-v2026.7.19
+ontopoiesis-v2026.7.19
 ```
 
-Pushing a tag runs that package's checks, builds it, and publishes it to PyPI
-via the release workflow. The tag version must match the version in the
-package's `pyproject.toml`.
+No version bump or tag push is needed; the version in each package's
+`pyproject.toml` is not used for releases.

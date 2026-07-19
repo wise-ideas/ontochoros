@@ -9,8 +9,9 @@ generally not accepted.
 When reporting a bug, please include the ontology document (or a minimal
 excerpt) that triggers it and the exact error output.
 
-The toolchain, workflow, and invariants for working on the code are
-documented per package:
+The toolchain and workflow for working on the code are documented in the
+[development setup guide](https://wise-ideas.github.io/ontochoros/development/setup/);
+package-specific invariants and architecture notes live alongside it:
 
-- [Ontoplexis development setup](https://wise-ideas.github.io/ontochoros/ontoplexis/contrib/setup/)
-- [Ontopoiesis contributing overview](https://wise-ideas.github.io/ontochoros/ontopoiesis/contrib/)
+- [Ontoplexis internals](https://wise-ideas.github.io/ontochoros/ontoplexis/contrib/internals/)
+- [Ontopoiesis internals](https://wise-ideas.github.io/ontochoros/ontopoiesis/contrib/)

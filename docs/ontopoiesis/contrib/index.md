@@ -4,7 +4,8 @@ title: "Contributing / Internals"
 
 These pages are for contributors working on Ontopoiesis internals rather than operators
 using the CLI. They document library boundaries, internal call graphs, and the current
-public-vs-internal packaging stance.
+public-vs-internal packaging stance. For the shared toolchain and workflow, see the
+[development setup guide](../../development/setup.md).
 
 - [Package architecture](package.md) — library layer boundaries and ownership
 - [Code maps](code-maps.md) — command call paths and module-level diagrams

@@ -45,9 +45,6 @@ nav = [
       { "Edge Roles" = "ontoplexis/reference/roles.md" },
       { "Derived Relations" = "ontoplexis/reference/derived.md" },
     ]},
-    { "Contributing" = [
-      { "Development Setup" = "ontoplexis/contrib/setup.md" },
-    ]},
   ]},
   { "Ontopoiesis" = [
     { "Getting Started" = [
@@ -74,9 +71,17 @@ nav = [
       { "Lint Rules" = "ontopoiesis/lint-rules.md" },
       { "Glossary" = "ontopoiesis/glossary.md" },
     ]},
-    { "Contributing" = [
+  ]},
+  { "Development" = [
+    { "Development Setup" = "development/setup.md" },
+    { "Ontoplexis Internals" = [
+      { "Invariants" = "ontoplexis/contrib/internals.md" },
+    ]},
+    { "Ontopoiesis Internals" = [
       { "Overview" = "ontopoiesis/contrib/index.md" },
       { "Package Architecture" = "ontopoiesis/contrib/package.md" },
+      { "Code Maps" = "ontopoiesis/contrib/code-maps.md" },
+      { "Public Surface" = "ontopoiesis/contrib/public-surface.md" },
     ]},
   ]},
 ]
