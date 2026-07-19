@@ -27,11 +27,8 @@ def pizza_ontology() -> Ontology:
 
 
 @pytest.fixture
-def pizza_lbug(tmp_path: Path, pizza_ontology: Ontology) -> Path:
-    path = tmp_path / "pizza.lbug"
-    projection = pizza_ontology.save_projection(path)
-    projection.close()
-    return path
+def pizza_lbug(tmp_path: Path, write_lbug) -> Path:
+    return write_lbug(tmp_path / "pizza.lbug", _PIZZA_OWX)
 
 
 def test_slice_by_iri_includes_ancestor_axioms(pizza_ontology: Ontology) -> None:

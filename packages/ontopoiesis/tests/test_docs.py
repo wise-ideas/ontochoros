@@ -13,10 +13,13 @@ import re
 from pathlib import Path
 
 import pytest
-from ontoplexis import Ontology, WritableProjection
+from ontoplexis import WritableProjection
 
-PACKAGE_ROOT = Path(__file__).resolve().parent.parent
-DOCS = PACKAGE_ROOT / "docs"
+# The package's user docs live in the monorepo-root docs tree; snippet
+# includes (--8<--) are written relative to the repo root, as zensical
+# resolves them.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DOCS = REPO_ROOT / "docs" / "ontopoiesis"
 
 _FENCE = re.compile(r"^```(\w+)[^\n]*\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 _INCLUDE = re.compile(r'^--8<-- "(?P<path>[^"]+)"$', re.MULTILINE)
@@ -29,9 +32,7 @@ _WRITE_CLAUSE = re.compile(r"\b(CREATE|MERGE|SET|DELETE|DETACH|COPY|ALTER|DROP)\
 
 def _expand_includes(block: str) -> str:
     """Inline pymdownx-snippets markers, resolved like the docs build does."""
-    return _INCLUDE.sub(
-        lambda m: (PACKAGE_ROOT / m.group("path")).read_text(encoding="utf-8"), block
-    )
+    return _INCLUDE.sub(lambda m: (REPO_ROOT / m.group("path")).read_text(encoding="utf-8"), block)
 
 
 def _blocks(path: Path, language: str) -> list[str]:
@@ -43,14 +44,19 @@ def _blocks(path: Path, language: str) -> list[str]:
 
 
 def _docs_with(language: str) -> list[Path]:
-    return sorted(p for p in DOCS.rglob("*.md") if _blocks(p, language))
+    # A gate that discovers its own inputs must fail loudly when it finds
+    # none: an empty parametrize set silently skips, which is how a docs
+    # reorganization once disabled this test without anyone noticing.
+    docs = sorted(p for p in DOCS.rglob("*.md") if _blocks(p, language))
+    if not docs:
+        raise AssertionError(f"No docs with ```{language} blocks found under {DOCS}")
+    return docs
 
 
 @pytest.mark.parametrize("doc", _docs_with("cypher"), ids=lambda p: str(p.relative_to(DOCS)))
-def test_cypher_snippets_execute(doc: Path, tmp_path) -> None:
-    target = str(tmp_path / "docs.lbug")
+def test_cypher_snippets_execute(doc: Path, tmp_path, write_lbug) -> None:
     document = (DOCS / "family.owlxml").read_text(encoding="utf-8")
-    Ontology.from_owlxml(document).save_projection(target).close()
+    target = write_lbug(tmp_path / "docs.lbug", document)
     with WritableProjection.open(target) as projection:
         for index, block in enumerate(_blocks(doc, "cypher")):
             if any(marker in block for marker in ("{{", "{%", "<<")):

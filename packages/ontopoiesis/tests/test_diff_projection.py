@@ -1,9 +1,10 @@
 from pathlib import Path
 
-from ontoplexis import Edge, Graph, Node, Ontology
+from ontoplexis import Edge, Graph, Node
 from ontoplexis.graph import save_projection
 
 from ontopoiesis.diff_projection import diff_projections
+from tests.conftest import WriteLbug
 
 _BASE = """<?xml version="1.0"?>
 <Ontology xmlns="http://www.w3.org/2002/07/owl#"
@@ -20,25 +21,28 @@ _SUBCLASS = """  <SubClassOf>
   </SubClassOf>"""
 
 
-def _save_owlxml(extra: str, path: Path) -> None:
-    projection = Ontology.from_owlxml(_BASE.format(extra=extra)).save_projection(path)
-    projection.close()
+def _save_owlxml(write_lbug: WriteLbug, extra: str, path: Path) -> None:
+    write_lbug(path, _BASE.format(extra=extra))
 
 
-def test_diff_projections_reports_no_rows_for_identical_documents(tmp_path: Path) -> None:
+def test_diff_projections_reports_no_rows_for_identical_documents(
+    tmp_path: Path, write_lbug: WriteLbug
+) -> None:
     before = tmp_path / "before.lbug"
     after = tmp_path / "after.lbug"
-    _save_owlxml(_SUBCLASS, before)
-    _save_owlxml(_SUBCLASS, after)
+    _save_owlxml(write_lbug, _SUBCLASS, before)
+    _save_owlxml(write_lbug, _SUBCLASS, after)
 
     assert diff_projections(before, after) == []
 
 
-def test_diff_projections_reports_added_axiom_with_context(tmp_path: Path) -> None:
+def test_diff_projections_reports_added_axiom_with_context(
+    tmp_path: Path, write_lbug: WriteLbug
+) -> None:
     before_path = tmp_path / "before.lbug"
     after_path = tmp_path / "after.lbug"
-    _save_owlxml("", before_path)
-    _save_owlxml(_SUBCLASS, after_path)
+    _save_owlxml(write_lbug, "", before_path)
+    _save_owlxml(write_lbug, _SUBCLASS, after_path)
 
     rows = diff_projections(before_path, after_path)
 
@@ -51,11 +55,11 @@ def test_diff_projections_reports_added_axiom_with_context(tmp_path: Path) -> No
     assert axiom_row.iri == "https://example.org/pizza#Pizza"
 
 
-def test_diff_projections_reports_removed_axiom(tmp_path: Path) -> None:
+def test_diff_projections_reports_removed_axiom(tmp_path: Path, write_lbug: WriteLbug) -> None:
     before_path = tmp_path / "before.lbug"
     after_path = tmp_path / "after.lbug"
-    _save_owlxml(_SUBCLASS, before_path)
-    _save_owlxml("", after_path)
+    _save_owlxml(write_lbug, _SUBCLASS, before_path)
+    _save_owlxml(write_lbug, "", after_path)
 
     rows = diff_projections(before_path, after_path)
 
@@ -82,3 +86,63 @@ def test_diff_projections_handles_reference_cycles(tmp_path: Path) -> None:
     save_projection(graph, after).close()
 
     assert diff_projections(before, after) == []
+
+
+def test_diff_projections_reports_in_place_edit_as_removal_plus_addition(
+    tmp_path: Path, write_lbug: WriteLbug
+) -> None:
+    # Node uids are not stable across builds, so an edited construct is one
+    # removed fingerprint plus one added fingerprint — the module's headline
+    # contract.
+    before_path = tmp_path / "before.lbug"
+    after_path = tmp_path / "after.lbug"
+    _save_owlxml(write_lbug, _SUBCLASS, before_path)
+    _save_owlxml(
+        write_lbug,
+        _SUBCLASS.replace("pizza#Food", "pizza#Meal"),
+        after_path,
+    )
+
+    rows = diff_projections(before_path, after_path)
+
+    assert sorted((row.status, row.kind) for row in rows) == [
+        ("added", "SubClassOf"),
+        ("removed", "SubClassOf"),
+    ]
+    added, removed = (
+        next(row for row in rows if row.status == "added"),
+        next(row for row in rows if row.status == "removed"),
+    )
+    assert added.fingerprint != removed.fingerprint
+
+
+def test_diff_projections_counts_duplicate_axioms(tmp_path: Path, write_lbug: WriteLbug) -> None:
+    before_path = tmp_path / "before.lbug"
+    after_path = tmp_path / "after.lbug"
+    _save_owlxml(write_lbug, "", before_path)
+    _save_owlxml(write_lbug, _SUBCLASS + "\n" + _SUBCLASS, after_path)
+
+    rows = diff_projections(before_path, after_path)
+
+    assert [(row.status, row.kind, row.count) for row in rows] == [("added", "SubClassOf", 2)]
+
+
+def test_diff_projections_detects_annotation_only_changes(
+    tmp_path: Path, write_lbug: WriteLbug
+) -> None:
+    annotation = """  <AnnotationAssertion>
+    <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#label"/>
+    <IRI>https://example.org/pizza#Pizza</IRI>
+    <Literal xml:lang="en">{label}</Literal>
+  </AnnotationAssertion>"""
+    before_path = tmp_path / "before.lbug"
+    after_path = tmp_path / "after.lbug"
+    _save_owlxml(write_lbug, annotation.format(label="Pizza"), before_path)
+    _save_owlxml(write_lbug, annotation.format(label="Flatbread"), after_path)
+
+    rows = diff_projections(before_path, after_path)
+
+    assert sorted((row.status, row.kind) for row in rows) == [
+        ("added", "AnnotationAssertion"),
+        ("removed", "AnnotationAssertion"),
+    ]

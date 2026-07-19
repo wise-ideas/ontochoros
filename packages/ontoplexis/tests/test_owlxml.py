@@ -501,3 +501,23 @@ def test_serialize_rejects_text_alongside_children() -> None:
     )
     with pytest.raises(OwlXmlStructureError, match="mixes text content"):
         serialize_owlxml(graph)
+
+
+def test_relative_iris_resolve_by_base_concatenation_like_owlapi() -> None:
+    # The reference implementation concatenates xml:base with a relative IRI
+    # verbatim; RFC 3986 resolution would drop the base's trailing
+    # '#'-segment. OWLAPI-emitted documents (base ending in '#', bare local
+    # names as IRIs) depend on concatenation, e.g. the OWL 2 Primer's
+    # owl:maxQualifiedCardinality annotation property.
+    doc = (
+        '<?xml version="1.0"?>'
+        '<Ontology xmlns="http://www.w3.org/2002/07/owl#"'
+        ' xml:base="http://www.w3.org/2002/07/owl#"'
+        ' ontologyIRI="http://ex.org/onto">'
+        '<Declaration><AnnotationProperty IRI="maxQualifiedCardinality"/></Declaration>'
+        "</Ontology>"
+    )
+    graph = parse_owlxml(doc)
+
+    (prop,) = [n for n in graph.nodes if n.kind == "AnnotationProperty"]
+    assert prop.iri == "http://www.w3.org/2002/07/owl#maxQualifiedCardinality"

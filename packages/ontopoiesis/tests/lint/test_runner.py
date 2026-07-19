@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from ontopoiesis.cypher_test.plugin import open_cypher_runtime
 from ontopoiesis.lint.checker import run_lint_on_path
 from ontopoiesis.lint.lint_registry import LintRule
@@ -76,9 +78,5 @@ def test_open_cypher_runtime_rejects_non_lbug_inputs(tmp_path: Path) -> None:
     ontology_path = tmp_path / "ontology.txt"
     ontology_path.write_text("ontology")
 
-    try:
+    with pytest.raises(ValueError, match=r"Cypher tests require a \.lbug projection"):
         open_cypher_runtime(ontology_path)
-    except ValueError as exc:
-        assert str(exc) == f"Cypher tests require a .lbug projection, got {ontology_path}."
-    else:
-        raise AssertionError("Expected ValueError for non-.lbug input")

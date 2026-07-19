@@ -312,9 +312,10 @@ def construct_support_manifest(*, mode: JsonSchemaMode = "validation") -> dict[s
     """Return a JSON-serializable manifest derived from the construct schema.
 
     This manifest is the schema-driven handoff point for non-Python consumers
-    such as the OwlAPI bridge.  It carries the construct kind catalog, per-kind
-    field names, and the abstract-group membership already encoded in the
-    Python registry.
+    building on the construct catalog — MCP tool definitions, API schemas,
+    doc generators.  It carries the construct kind catalog, per-kind field
+    names, and the abstract-group membership already encoded in the Python
+    registry.
     """
 
     schema = construct_json_schema(mode=mode)

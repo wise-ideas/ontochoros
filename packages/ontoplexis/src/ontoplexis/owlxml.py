@@ -433,12 +433,13 @@ def _element_properties(
 def _resolve_iri(value: str, base: str | None) -> str:
     if base is None or urlsplit(value).scheme:
         return value
-    resolved = urljoin(base, value)
-    # urljoin drops a trailing empty fragment or query; namespace IRIs end in
-    # "#" routinely, so restore it.
-    if value.endswith(("#", "?")) and not resolved.endswith(value[-1]):
-        resolved += value[-1]
-    return resolved
+    # The reference implementation (OWLAPI) resolves relative IRIs in OWL/XML
+    # by concatenating the in-scope xml:base with the value, not by RFC 3986
+    # reference resolution — RFC resolution would drop the trailing segment of
+    # a base ending in '#', turning owl# + maxQualifiedCardinality into
+    # .../07/maxQualifiedCardinality. Fidelity is defined by the reference
+    # implementation, so match it.
+    return base + value
 
 
 def _resolve_curie(value: str, prefixes: dict[str, str]) -> str:

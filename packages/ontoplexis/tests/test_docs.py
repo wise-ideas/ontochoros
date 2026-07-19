@@ -17,7 +17,8 @@ import pytest
 
 from ontoplexis import Ontology, WritableProjection
 
-DOCS = Path(__file__).resolve().parent.parent / "docs"
+# The package's user docs live in the monorepo-root docs tree.
+DOCS = Path(__file__).resolve().parents[3] / "docs" / "ontoplexis"
 
 _FENCE = re.compile(r"^```(\w+)[^\n]*\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 
@@ -36,7 +37,13 @@ def _blocks(path: Path, language: str) -> list[str]:
 
 
 def _docs_with(language: str) -> list[Path]:
-    return sorted(p for p in DOCS.rglob("*.md") if _blocks(p, language))
+    # A gate that discovers its own inputs must fail loudly when it finds
+    # none: an empty parametrize set silently skips, which is how a docs
+    # reorganization once disabled this test without anyone noticing.
+    docs = sorted(p for p in DOCS.rglob("*.md") if _blocks(p, language))
+    if not docs:
+        raise AssertionError(f"No docs with ```{language} blocks found under {DOCS}")
+    return docs
 
 
 def _seed_sample_files(target: Path) -> None:

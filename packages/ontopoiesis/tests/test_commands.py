@@ -1,32 +1,37 @@
+"""CLI command tests.
+
+Commands run against real projections built from real OWL/XML: these tests
+prove observable behavior (exit codes, files written, output content), not
+argument passthrough. Mocks appear only at true process boundaries — the
+in-process pytest.main invocation of the `test` command — and for
+option-validation paths that never reach a projection.
+"""
+
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
+from ontoplexis import Projection
 from typer.testing import CliRunner
 
 from ontopoiesis.app import app
-from ontopoiesis.commands.impact import (
-    _ImpactDirection as ImpactDirection,
-)
-from ontopoiesis.commands.impact import (
-    _ImpactSeedKind as ImpactSeedKind,
-)
-from ontopoiesis.diff_projection import DiffRow
-from ontopoiesis.lint import LintResults, LintRuleSelectionError, LintViolation
-from ontopoiesis.migrations import MigrationRecord, MigrationResult
-from ontopoiesis.render import RenderFormat
-from ontopoiesis.render import RenderResult as RenderArtifact
+from tests.conftest import WriteLbug
 
 _PIZZA_OWX = """<?xml version="1.0"?>
 <Ontology xmlns="http://www.w3.org/2002/07/owl#"
           ontologyIRI="https://example.org/pizza#">
+  <Declaration><Class IRI="https://example.org/pizza#Pizza"/></Declaration>
   <SubClassOf>
     <Class IRI="https://example.org/pizza#Pizza"/>
     <Class IRI="https://example.org/pizza#Food"/>
   </SubClassOf>
 </Ontology>
 """
+
+_PIZZA_IRI = "https://example.org/pizza#Pizza"
+_FOOD_IRI = "https://example.org/pizza#Food"
 
 
 @pytest.fixture
@@ -37,6 +42,11 @@ def runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
 
 def _invoke(runner: CliRunner, *args: str):
     return runner.invoke(app, list(args))
+
+
+@pytest.fixture
+def pizza_lbug(tmp_path: Path, write_lbug: WriteLbug) -> Path:
+    return write_lbug(tmp_path / "pizza.lbug", _PIZZA_OWX)
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +116,7 @@ def test_export_cli_round_trips_projection_to_owlxml(runner: CliRunner, tmp_path
     assert result.exit_code == 0
     document = exported_path.read_text(encoding="utf-8")
     assert "SubClassOf" in document
-    assert "https://example.org/pizza#Pizza" in document
+    assert _PIZZA_IRI in document
 
 
 def test_export_cli_defaults_output_to_owx_beside_input(runner: CliRunner, tmp_path: Path) -> None:
@@ -136,27 +146,12 @@ def test_export_cli_rejects_non_lbug_input(runner: CliRunner, tmp_path: Path) ->
 # ---------------------------------------------------------------------------
 
 
-def test_diff_cli_writes_json_output(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_diff_cli_reports_changes_and_writes_json_output(
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
 ) -> None:
-    before_path = tmp_path / "before.lbug"
-    after_path = tmp_path / "after.lbug"
+    before_path = write_lbug(tmp_path / "before.lbug", _PIZZA_OWX)
+    after_path = write_lbug(tmp_path / "after.lbug", _PIZZA_OWX.replace("pizza#Food", "pizza#Meal"))
     output_path = tmp_path / "diff.json"
-    before_path.write_text("before")
-    after_path.write_text("after")
-
-    monkeypatch.setattr(
-        "ontopoiesis.commands.diff.diff_projections",
-        lambda *_args: [
-            DiffRow(
-                status="added",
-                kind="Class",
-                iri="https://example.org/A",
-                count=1,
-                fingerprint="abc",
-            )
-        ],
-    )
 
     result = _invoke(
         runner,
@@ -170,18 +165,45 @@ def test_diff_cli_writes_json_output(
     )
 
     assert result.exit_code == 1
-    assert '"status": "added"' in output_path.read_text()
+    rows = json.loads(output_path.read_text())
+    assert sorted((row["status"], row["kind"]) for row in rows) == [
+        ("added", "SubClassOf"),
+        ("removed", "SubClassOf"),
+    ]
+
+
+def test_diff_cli_writes_table_output_to_file(
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
+) -> None:
+    before_path = write_lbug(tmp_path / "before.lbug", _PIZZA_OWX)
+    after_path = write_lbug(tmp_path / "after.lbug", _PIZZA_OWX.replace("pizza#Food", "pizza#Meal"))
+    output_path = tmp_path / "diff.tsv"
+
+    result = _invoke(
+        runner, "diff", str(before_path), str(after_path), "--output", str(output_path)
+    )
+
+    assert result.exit_code == 1
+    lines = output_path.read_text(encoding="utf-8").splitlines()
+    assert lines[0].split("\t") == [
+        "status",
+        "kind",
+        "iri",
+        "count",
+        "fingerprint",
+        "ontology_iri",
+    ]
+    assert sorted(line.split("\t")[:2] for line in lines[1:]) == [
+        ["added", "SubClassOf"],
+        ["removed", "SubClassOf"],
+    ]
 
 
 def test_diff_cli_exits_zero_when_no_differences_found(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
 ) -> None:
-    before_path = tmp_path / "before.lbug"
-    after_path = tmp_path / "after.lbug"
-    before_path.write_text("before")
-    after_path.write_text("after")
-
-    monkeypatch.setattr("ontopoiesis.commands.diff.diff_projections", lambda *_args: [])
+    before_path = write_lbug(tmp_path / "before.lbug", _PIZZA_OWX)
+    after_path = write_lbug(tmp_path / "after.lbug", _PIZZA_OWX)
 
     result = _invoke(runner, "diff", str(before_path), str(after_path))
 
@@ -206,101 +228,47 @@ def test_diff_cli_rejects_unknown_output_format(runner: CliRunner, tmp_path: Pat
 # ---------------------------------------------------------------------------
 
 
-def test_impact_upstream_cli_passes_direction_and_rows(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_impact_upstream_cli_lists_referencing_constructs(
+    runner: CliRunner, pizza_lbug: Path
 ) -> None:
-    input_path = tmp_path / "graph.lbug"
-    input_path.write_text("graph")
-    seen: dict[str, object] = {}
+    result = _invoke(runner, "impact", "upstream", str(pizza_lbug), "--iri", _PIZZA_IRI)
 
-    def fake_query(
-        path: Path,
-        seed: str,
-        *,
-        seed_kind: ImpactSeedKind,
-        direction: ImpactDirection,
-    ) -> list[dict[str, object]]:
-        seen["path"] = path
-        seen["seed"] = seed
-        seen["seed_kind"] = seed_kind
-        seen["direction"] = direction
-        return [{"uid": "0x1", "kind": "Class", "depth": 0, "iri": seed}]
+    assert result.exit_code == 0
+    assert "Declaration" in result.output
+    assert "SubClassOf" in result.output
+    assert "Ontology" in result.output
 
-    monkeypatch.setattr("ontopoiesis.commands.impact._query_impact", fake_query)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.impact.print_query_table",
-        lambda rows: seen.setdefault("rows", list(rows)),
-    )
 
+def test_impact_downstream_cli_reports_missing_rows_for_leaf_entity(
+    runner: CliRunner, pizza_lbug: Path
+) -> None:
+    result = _invoke(runner, "impact", "downstream", str(pizza_lbug), "--iri", _PIZZA_IRI)
+
+    assert result.exit_code == 0
+    assert f"No constructs found for iri {_PIZZA_IRI}." in result.output
+
+
+def test_impact_downstream_cli_accepts_uid(runner: CliRunner, pizza_lbug: Path) -> None:
+    with Projection.open(pizza_lbug) as projection:
+        (row,) = projection.execute("MATCH (n:N {kind: 'SubClassOf'}) RETURN n.uid AS uid")
+    subclass_uid = str(row["uid"])
+
+    result = _invoke(runner, "impact", "downstream", str(pizza_lbug), "--uid", subclass_uid)
+
+    assert result.exit_code == 0
+    assert _PIZZA_IRI in result.output
+    assert _FOOD_IRI in result.output
+
+
+def test_impact_upstream_cli_reports_nothing_for_unknown_seed(
+    runner: CliRunner, pizza_lbug: Path
+) -> None:
     result = _invoke(
-        runner, "impact", "upstream", str(input_path), "--iri", "https://example.org/A"
+        runner, "impact", "upstream", str(pizza_lbug), "--iri", "https://example.org/pizza#Nope"
     )
 
     assert result.exit_code == 0
-    assert seen["path"] == input_path
-    assert seen["seed"] == "https://example.org/A"
-    assert seen["seed_kind"] == ImpactSeedKind.IRI
-    assert seen["direction"] == ImpactDirection.UPSTREAM
-    assert seen["rows"] == [
-        {"uid": "0x1", "kind": "Class", "depth": 0, "iri": "https://example.org/A"}
-    ]
-
-
-def test_impact_downstream_cli_reports_missing_rows(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    input_path = tmp_path / "graph.lbug"
-    input_path.write_text("graph")
-    notices: list[tuple[str, bool]] = []
-
-    monkeypatch.setattr("ontopoiesis.commands.impact._query_impact", lambda *_args, **_kwargs: [])
-    monkeypatch.setattr(
-        "ontopoiesis.commands.impact.print_notice",
-        lambda message, err=False: notices.append((message, err)),
-    )
-
-    result = _invoke(
-        runner, "impact", "downstream", str(input_path), "--iri", "https://example.org/A"
-    )
-
-    assert result.exit_code == 0
-    assert notices == [("No constructs found for iri https://example.org/A.", False)]
-
-
-def test_impact_downstream_cli_accepts_uid(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    input_path = tmp_path / "graph.lbug"
-    input_path.write_text("graph")
-    seen: dict[str, object] = {}
-
-    def fake_query(
-        path: Path,
-        seed: str,
-        *,
-        seed_kind: ImpactSeedKind,
-        direction: ImpactDirection,
-    ) -> list[dict[str, object]]:
-        seen["path"] = path
-        seen["seed"] = seed
-        seen["seed_kind"] = seed_kind
-        seen["direction"] = direction
-        return [{"uid": "0x2", "kind": "SubClassOf", "depth": 1, "iri": None}]
-
-    monkeypatch.setattr("ontopoiesis.commands.impact._query_impact", fake_query)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.impact.print_query_table",
-        lambda rows: seen.setdefault("rows", list(rows)),
-    )
-
-    result = _invoke(runner, "impact", "downstream", str(input_path), "--uid", "0x1")
-
-    assert result.exit_code == 0
-    assert seen["path"] == input_path
-    assert seen["seed"] == "0x1"
-    assert seen["seed_kind"] == ImpactSeedKind.UID
-    assert seen["direction"] == ImpactDirection.DOWNSTREAM
-    assert seen["rows"] == [{"uid": "0x2", "kind": "SubClassOf", "depth": 1, "iri": None}]
+    assert "No constructs found" in result.output
 
 
 def test_impact_cli_requires_exactly_one_seed_flag(runner: CliRunner, tmp_path: Path) -> None:
@@ -314,7 +282,7 @@ def test_impact_cli_requires_exactly_one_seed_flag(runner: CliRunner, tmp_path: 
         "upstream",
         str(input_path),
         "--iri",
-        "https://example.org/A",
+        _PIZZA_IRI,
         "--uid",
         "0x1",
     )
@@ -330,93 +298,39 @@ def test_impact_cli_requires_exactly_one_seed_flag(runner: CliRunner, tmp_path: 
 # ---------------------------------------------------------------------------
 
 
-def test_lint_cli_exits_zero_and_passes_selection_options(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    input_path = tmp_path / "ontology.lbug"
-    input_path.write_text("graph")
-    seen: dict[str, object] = {}
-
-    def fake_resolve_lint_rule_selection(**kwargs: object) -> list[str]:
-        seen["selection"] = kwargs
-        return ["RULE001"]
-
-    def fake_run_lint_on_path(path: Path, *, rules: list[str]) -> LintResults:
-        seen["path"] = path
-        seen["rules"] = rules
-        return LintResults()
-
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.resolve_lint_rule_selection",
-        fake_resolve_lint_rule_selection,
-    )
-    monkeypatch.setattr("ontopoiesis.commands.lint_command.run_lint_on_path", fake_run_lint_on_path)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.print_notice", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.print_summary", lambda *_args, **_kwargs: None
-    )
-
-    result = _invoke(
-        runner,
-        "lint",
-        str(input_path),
-        "--profile",
-        "editorial",
-        "--select",
-        "RULE",
-        "--extend-select",
-        "WARN",
-        "--ignore",
-        "SKIP",
-    )
+def test_lint_cli_exits_zero_on_clean_projection(runner: CliRunner, pizza_lbug: Path) -> None:
+    result = _invoke(runner, "lint", str(pizza_lbug))
 
     assert result.exit_code == 0
-    assert seen["selection"] == {
-        "profiles": ["editorial"],
-        "select": ["RULE"],
-        "extend_select": ["WARN"],
-        "ignore": ["SKIP"],
-    }
-    assert seen["path"] == input_path
-    assert seen["rules"] == ["RULE001"]
+    assert "No lint violations found." in result.output
 
 
-def test_lint_cli_exits_one_for_failures(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_lint_cli_exits_one_and_names_the_failing_rule(
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
 ) -> None:
-    input_path = tmp_path / "ontology.lbug"
-    input_path.write_text("graph")
-
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.resolve_lint_rule_selection", lambda **_kwargs: []
+    unsatisfiable = _PIZZA_OWX.replace(
+        "https://example.org/pizza#Food", "http://www.w3.org/2002/07/owl#Nothing"
     )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.run_lint_on_path",
-        lambda *_args, **_kwargs: LintResults(
-            violations=[
-                LintViolation(
-                    path=Path("rules/test.cypher"),
-                    rows=[{"uid": "0x1"}],
-                    is_warn=False,
-                )
-            ]
-        ),
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.print_notice", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.print_summary", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.print_violation_rows", lambda *_args, **_kwargs: None
-    )
+    input_path = write_lbug(tmp_path / "broken.lbug", unsatisfiable)
 
     result = _invoke(runner, "lint", str(input_path))
 
     assert result.exit_code == 1
+    assert "FAIL test_subclass_nothing.cypher" in result.output
+
+
+def test_lint_cli_select_narrows_the_rule_set(
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
+) -> None:
+    # The same broken projection passes when only an unrelated rule runs.
+    unsatisfiable = _PIZZA_OWX.replace(
+        "https://example.org/pizza#Food", "http://www.w3.org/2002/07/owl#Nothing"
+    )
+    input_path = write_lbug(tmp_path / "broken.lbug", unsatisfiable)
+
+    result = _invoke(runner, "lint", str(input_path), "--select", "E102")
+
+    assert result.exit_code == 0
 
 
 def test_lint_cli_rejects_non_lbug_input(runner: CliRunner, tmp_path: Path) -> None:
@@ -430,155 +344,49 @@ def test_lint_cli_rejects_non_lbug_input(runner: CliRunner, tmp_path: Path) -> N
 
 
 def test_lint_cli_surfaces_selection_errors_as_bad_parameters(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    runner: CliRunner, pizza_lbug: Path
 ) -> None:
-    input_path = tmp_path / "ontology.lbug"
-    input_path.write_text("graph")
-
-    monkeypatch.setattr(
-        "ontopoiesis.commands.lint_command.resolve_lint_rule_selection",
-        lambda **_kwargs: (_ for _ in ()).throw(LintRuleSelectionError("unknown selector")),
-    )
-
-    result = _invoke(runner, "lint", str(input_path))
+    result = _invoke(runner, "lint", str(pizza_lbug), "--select", "Z999")
 
     assert result.exit_code == 2
-    assert "unknown selector" in result.output
+    assert "Unknown lint selector" in result.output
 
 
 # ---------------------------------------------------------------------------
 # migrate
 # ---------------------------------------------------------------------------
 
+_EXAMPLE_MIGRATIONS = Path(__file__).resolve().parents[1] / "examples" / "migrations"
 
-def test_migrate_cli_runs_and_writes_projection(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+
+def _node_count(path: Path) -> int:
+    with Projection.open(path) as projection:
+        return projection.node_count
+
+
+def test_migrate_cli_applies_migrations_and_writes_projection(
+    runner: CliRunner, tmp_path: Path
 ) -> None:
-    migrations_dir = tmp_path / "migrations"
-    migrations_dir.mkdir()
     output_path = tmp_path / "migrated.lbug"
-    seen: dict[str, object] = {}
 
-    class _Runner:
-        def __init__(self, start_from: Path | None = None) -> None:
-            seen["start_from"] = start_from
-
-        def __enter__(self):
-            return self
-
-        def refresh_derived_edges(self) -> None:
-            pass
-
-        def __exit__(self, *_args: object) -> None:
-            seen["closed"] = True
-
-        def apply_all(self, path: Path) -> MigrationResult:
-            seen["migrations_dir"] = path
-            return MigrationResult(
-                applied=[
-                    MigrationRecord(
-                        migration_id="001_init",
-                        path=migrations_dir / "001_init.cypher",
-                    )
-                ],
-                node_count=3,
-                edge_count=4,
-            )
-
-        @property
-        def database_path(self) -> Path:
-            return tmp_path / "temp.lbug"
-
-        def build_database(self):
-            seen["built_database"] = True
-
-            class _Projection:
-                def close(self) -> None:
-                    seen["projection_closed"] = True
-
-            (tmp_path / "temp.lbug").write_text("graph")
-            return _Projection()
-
-    monkeypatch.setattr("ontopoiesis.commands.migrate.MigrationRunner", _Runner)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_path_action", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_summary", lambda *_args, **_kwargs: None
-    )
-
-    result = _invoke(
-        runner,
-        "migrate",
-        str(migrations_dir),
-        "--output",
-        str(output_path),
-    )
+    result = _invoke(runner, "migrate", str(_EXAMPLE_MIGRATIONS), "--output", str(output_path))
 
     assert result.exit_code == 0
-    assert output_path.read_text() == "graph"
-    assert seen == {
-        "start_from": None,
-        "migrations_dir": migrations_dir,
-        "built_database": True,
-        "projection_closed": True,
-        "closed": True,
-    }
+    assert output_path.exists()
+    assert _node_count(output_path) > 0
 
 
-def test_migrate_cli_uses_default_lbug_output_path(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_migrate_cli_uses_default_lbug_output_path(runner: CliRunner, tmp_path: Path) -> None:
     migrations_dir = tmp_path / "migrations"
     migrations_dir.mkdir()
-    output_path = tmp_path / "migrations.lbug"
-    seen: dict[str, object] = {}
-
-    class _Runner:
-        def __init__(self, start_from: Path | None = None) -> None:
-            seen["start_from"] = start_from
-
-        def __enter__(self):
-            return self
-
-        def refresh_derived_edges(self) -> None:
-            pass
-
-        def __exit__(self, *_args: object) -> None:
-            return None
-
-        def apply_all(self, path: Path) -> MigrationResult:
-            seen["migrations_dir"] = path
-            return MigrationResult(applied=[], node_count=0, edge_count=0)
-
-        @property
-        def database_path(self) -> Path:
-            return tmp_path / "temp.lbug"
-
-        def build_database(self):
-            class _Projection:
-                def close(self) -> None:
-                    return None
-
-            (tmp_path / "temp.lbug").write_text("graph")
-            return _Projection()
-
-    monkeypatch.setattr("ontopoiesis.commands.migrate.MigrationRunner", _Runner)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_path_action", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_summary", lambda *_args, **_kwargs: None
+    (migrations_dir / "V0001__ontology.cypher").write_text(
+        "MERGE (n:N {uid: '0x01', kind: 'Ontology'});"
     )
 
     result = _invoke(runner, "migrate", str(migrations_dir))
 
     assert result.exit_code == 0
-    assert output_path.read_text() == "graph"
-    assert seen == {
-        "start_from": None,
-        "migrations_dir": migrations_dir,
-    }
+    assert _node_count(tmp_path / "migrations.lbug") == 1
 
 
 def test_migrate_cli_rejects_non_lbug_output_extension(runner: CliRunner, tmp_path: Path) -> None:
@@ -593,110 +401,44 @@ def test_migrate_cli_rejects_non_lbug_output_extension(runner: CliRunner, tmp_pa
     assert "output_path must use a .lbug file extension" in result.output
 
 
-def test_migrate_cli_resumes_existing_projection(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_migrate_cli_resumes_existing_projection_without_reapplying(
+    runner: CliRunner, tmp_path: Path
 ) -> None:
     migrations_dir = tmp_path / "migrations"
     migrations_dir.mkdir()
-    output_path = tmp_path / "graph.lbug"
-    output_path.write_text("existing")
-    seen: dict[str, object] = {}
-
-    class _Runner:
-        def __init__(self, start_from: Path | None = None) -> None:
-            seen["start_from"] = start_from
-
-        def __enter__(self):
-            return self
-
-        def refresh_derived_edges(self) -> None:
-            pass
-
-        def __exit__(self, *_args: object) -> None:
-            return None
-
-        def apply_all(self, path: Path) -> MigrationResult:
-            seen["migrations_dir"] = path
-            return MigrationResult(applied=[], node_count=3, edge_count=4)
-
-    monkeypatch.setattr("ontopoiesis.commands.migrate.MigrationRunner", _Runner)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_path_action", lambda *_args, **_kwargs: None
+    (migrations_dir / "V0001__ontology.cypher").write_text(
+        "MERGE (n:N {uid: '0x01', kind: 'Ontology'});"
     )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_summary", lambda *_args, **_kwargs: None
+    output_path = tmp_path / "graph.lbug"
+    assert (
+        _invoke(runner, "migrate", str(migrations_dir), "--output", str(output_path)).exit_code == 0
+    )
+    (migrations_dir / "V0002__more.cypher").write_text(
+        "MERGE (n:N {uid: '0x02', kind: 'Ontology'});"
     )
 
     result = _invoke(runner, "migrate", str(migrations_dir), "--output", str(output_path))
 
+    # V0001 is recorded as applied in the resumed projection; only V0002 runs.
     assert result.exit_code == 0
-    assert output_path.read_text() == "existing"
-    assert seen == {
-        "start_from": output_path,
-        "migrations_dir": migrations_dir,
-    }
+    assert _node_count(output_path) == 2
 
 
-def test_migrate_cli_force_rebuilds_existing_output(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_migrate_cli_force_rebuilds_existing_output(runner: CliRunner, tmp_path: Path) -> None:
     migrations_dir = tmp_path / "migrations"
     migrations_dir.mkdir()
+    (migrations_dir / "V0001__ontology.cypher").write_text(
+        "MERGE (n:N {uid: '0x01', kind: 'Ontology'});"
+    )
     output_path = tmp_path / "graph.lbug"
-    output_path.write_text("existing")
-    seen: dict[str, object] = {}
-
-    class _Runner:
-        def __init__(self, start_from: Path | None = None) -> None:
-            seen["start_from"] = start_from
-
-        def __enter__(self):
-            return self
-
-        def refresh_derived_edges(self) -> None:
-            pass
-
-        def __exit__(self, *_args: object) -> None:
-            return None
-
-        def apply_all(self, path: Path) -> MigrationResult:
-            seen["migrations_dir"] = path
-            return MigrationResult(applied=[], node_count=1, edge_count=0)
-
-        @property
-        def database_path(self) -> Path:
-            return tmp_path / "temp.lbug"
-
-        def build_database(self):
-            seen["built_database"] = True
-
-            class _Projection:
-                def close(self) -> None:
-                    seen["projection_closed"] = True
-
-            (tmp_path / "temp.lbug").write_text("rebuilt")
-            return _Projection()
-
-    monkeypatch.setattr("ontopoiesis.commands.migrate.MigrationRunner", _Runner)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_path_action", lambda *_args, **_kwargs: None
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.migrate.print_summary", lambda *_args, **_kwargs: None
-    )
+    output_path.write_text("not a database")
 
     result = _invoke(
         runner, "migrate", str(migrations_dir), "--output", str(output_path), "--force"
     )
 
     assert result.exit_code == 0
-    assert output_path.read_text() == "rebuilt"
-    assert seen == {
-        "start_from": None,
-        "migrations_dir": migrations_dir,
-        "built_database": True,
-        "projection_closed": True,
-    }
+    assert _node_count(output_path) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -704,43 +446,31 @@ def test_migrate_cli_force_rebuilds_existing_output(
 # ---------------------------------------------------------------------------
 
 
-def test_query_cli_executes_cypher_and_prints_rows(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    input_path = tmp_path / "graph.lbug"
-    input_path.write_text("graph")
-    seen: dict[str, object] = {}
-
-    class _Projection:
-        def __enter__(self):
-            return self
-
-        def refresh_derived_edges(self) -> None:
-            pass
-
-        def __exit__(self, *_args: object) -> None:
-            return None
-
-        def execute(self, cypher: str):
-            seen["cypher"] = cypher
-            return [{"uid": "0x1", "kind": "Class"}]
-
-    def fake_open_projection(path: Path) -> _Projection:
-        seen["path"] = path
-        return _Projection()
-
-    monkeypatch.setattr("ontopoiesis.commands.query.Projection.open", fake_open_projection)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.query.print_query_table",
-        lambda rows: seen.setdefault("rows", list(rows)),
+def test_query_cli_executes_cypher_and_prints_rows(runner: CliRunner, pizza_lbug: Path) -> None:
+    result = _invoke(
+        runner,
+        "query",
+        str(pizza_lbug),
+        "--query",
+        "MATCH (n:N {kind: 'Class'}) WHERE n.iri IS NOT NULL RETURN n.iri AS iri ORDER BY iri",
     )
 
-    result = _invoke(runner, "query", str(input_path), "--query", "MATCH (n) RETURN n.uid AS uid")
+    assert result.exit_code == 0
+    assert _FOOD_IRI in result.output
+    assert _PIZZA_IRI in result.output
+
+
+def test_query_cli_prints_nothing_for_empty_result(runner: CliRunner, pizza_lbug: Path) -> None:
+    result = _invoke(
+        runner,
+        "query",
+        str(pizza_lbug),
+        "--query",
+        "MATCH (n:N {kind: 'Nope'}) RETURN n.uid AS uid",
+    )
 
     assert result.exit_code == 0
-    assert seen["path"] == input_path
-    assert seen["cypher"] == "MATCH (n) RETURN n.uid AS uid"
-    assert seen["rows"] == [{"uid": "0x1", "kind": "Class"}]
+    assert result.output.strip() == ""
 
 
 # ---------------------------------------------------------------------------
@@ -749,62 +479,35 @@ def test_query_cli_executes_cypher_and_prints_rows(
 
 
 def test_render_cli_infers_format_from_output_path_and_writes_artifact(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    runner: CliRunner, pizza_lbug: Path, tmp_path: Path
 ) -> None:
-    input_path = tmp_path / "graph.lbug"
     output_path = tmp_path / "graph.dot"
-    input_path.write_text("graph")
-    seen: dict[str, object] = {}
-    notices: list[tuple[str, bool]] = []
-
-    def fake_render(
-        path: Path,
-        iris: list[str] | None,
-        *,
-        output_format: RenderFormat,
-        include_external: bool,
-    ):
-        seen["path"] = path
-        seen["iris"] = iris
-        seen["output_format"] = output_format
-        seen["include_external"] = include_external
-        return RenderArtifact(
-            format=RenderFormat.DOT,
-            content="digraph {}",
-            node_count=2,
-            edge_count=1,
-            missing_iris=["https://example.org/Missing"],
-        )
-
-    monkeypatch.setattr("ontopoiesis.commands.render_command.render_projection", fake_render)
-    monkeypatch.setattr(
-        "ontopoiesis.commands.render_command.print_notice",
-        lambda message, err=False: notices.append((message, err)),
-    )
-    monkeypatch.setattr(
-        "ontopoiesis.commands.render_command.print_path_action", lambda *_args: None
-    )
-    monkeypatch.setattr("ontopoiesis.commands.render_command.print_summary", lambda *_args: None)
 
     result = _invoke(
         runner,
         "render",
-        str(input_path),
-        "https://example.org/A",
+        str(pizza_lbug),
+        _PIZZA_IRI,
+        "https://example.org/pizza#Missing",
         "--output",
         str(output_path),
         "--include-external",
     )
 
     assert result.exit_code == 0
-    assert output_path.read_text(encoding="utf-8") == "digraph {}"
-    assert seen == {
-        "path": input_path,
-        "iris": ["https://example.org/A"],
-        "output_format": RenderFormat.DOT,
-        "include_external": True,
-    }
-    assert notices == [("IRI not found in projection: https://example.org/Missing", True)]
+    assert output_path.read_text(encoding="utf-8").startswith("digraph")
+    assert "IRI not found in projection: https://example.org/pizza#Missing" in result.output
+
+
+def test_render_cli_writes_svg_without_graphviz(
+    runner: CliRunner, pizza_lbug: Path, tmp_path: Path
+) -> None:
+    output_path = tmp_path / "graph.svg"
+
+    result = _invoke(runner, "render", str(pizza_lbug), "--output", str(output_path))
+
+    assert result.exit_code == 0
+    assert output_path.read_text(encoding="utf-8").startswith("<svg")
 
 
 def test_render_cli_rejects_unsupported_format(runner: CliRunner, tmp_path: Path) -> None:
@@ -834,6 +537,9 @@ def test_render_cli_rejects_unsupported_format(runner: CliRunner, tmp_path: Path
 def test_test_cli_invokes_pytest_with_resolved_test_paths(
     runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    # pytest.main is a process boundary: invoking a second in-process pytest
+    # session inside this one is unsupported, so the handoff stays mocked.
+    # The plugin behind it is tested for real in test_pytest_cypher.py.
     input_path = tmp_path / "graph.lbug"
     tests_dir = tmp_path / "tests"
     input_path.write_text("graph")
@@ -852,31 +558,18 @@ def test_test_cli_invokes_pytest_with_resolved_test_paths(
 
     monkeypatch.setattr("ontopoiesis.commands.test.pytest.main", fake_pytest_main)
 
-    result = _invoke(
-        runner,
-        "test",
-        str(input_path),
-        str(tests_dir),
-    )
+    result = _invoke(runner, "test", str(input_path), str(tests_dir))
 
     assert result.exit_code == 0
-    assert seen["args"] == [
-        "--ontology",
-        str(input_path),
-        str(tests_dir),
-    ]
+    assert seen["args"] == ["--ontology", str(input_path), str(tests_dir)]
     assert len(seen["plugins"]) == 1
 
 
-def test_test_cli_exits_two_when_no_tests_are_found(
-    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_test_cli_exits_two_when_no_tests_are_found(runner: CliRunner, tmp_path: Path) -> None:
     input_path = tmp_path / "graph.lbug"
     tests_dir = tmp_path / "tests"
     input_path.write_text("graph")
     tests_dir.mkdir()
-
-    monkeypatch.setattr("ontopoiesis.commands.test.resolve_cypher_tests", lambda _paths: [])
 
     result = _invoke(runner, "test", str(input_path), str(tests_dir))
 
@@ -892,8 +585,6 @@ def test_storage_backend_is_never_imported_directly() -> None:
     Ontopoiesis reaches storage only through ontoplexis `Projection` handles;
     importing the backend here would leak the seam across the package boundary.
     """
-    from pathlib import Path
-
     import ontopoiesis
 
     src = Path(ontopoiesis.__file__).parent
@@ -973,8 +664,6 @@ def test_convert_cli_rejects_existing_output_before_needing_the_jar(
 def test_convert_reason_build_pipeline_materializes_inferences(
     runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from ontoplexis import Projection
-
     monkeypatch.setenv("ROBOT_JAR", str(_ROBOT_JAR))
     source = tmp_path / "mini.ttl"
     source.write_text(_MINI_TTL, encoding="utf-8")

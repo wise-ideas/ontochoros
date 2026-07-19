@@ -142,7 +142,7 @@
 {"uid":"0xd90efaa6","construct":{"sub_class_expression":{"uid":"0xfaab8712"},"super_class_expression":{"uid":"0xdf371131"},"axiom_annotations":[],"kind":"SubClassOf"}}
 {"uid":"0x1e06a22","construct":{"cardinality":1,"data_property_expression":{"uid":"0x50319815"},"data_range":null,"kind":"DataMinCardinality"}}
 {"uid":"0x827e84b3","construct":{"sub_class_expression":{"uid":"0xc93d6262"},"super_class_expression":{"uid":"0x1e06a22"},"axiom_annotations":[],"kind":"SubClassOf"}}
-{"uid":"0x9192e552","serialisation":"shortform","construct":{"class_expressions":[{"uid":"0xfaab8712"},{"uid":"0xc93d6262"}],"axiom_annotations":[],"kind":"DisjointClasses"}}
+{"uid":"0x9192e552","construct":{"class_expressions":[{"uid":"0xfaab8712"},{"uid":"0xc93d6262"}],"axiom_annotations":[],"kind":"DisjointClasses"}}
 {"uid":"0xdd6ec40d","construct":{"sub_class_expression":{"uid":"0xf85056e2"},"super_class_expression":{"uid":"0xfaab8712"},"axiom_annotations":[],"kind":"SubClassOf"}}
 {"uid":"0xa1de413e","construct":{"cardinality":1,"data_property_expression":{"uid":"0x7b08b7ba"},"data_range":null,"kind":"DataMinCardinality"}}
 {"uid":"0x5e44fb35","construct":{"sub_class_expression":{"uid":"0xf85056e2"},"super_class_expression":{"uid":"0xa1de413e"},"axiom_annotations":[],"kind":"SubClassOf"}}
@@ -191,7 +191,7 @@
 {"uid":"0x9d4ad8bb","construct":{"object_property_expression":{"uid":"0x84b9a116"},"class_expression":{"uid":"0x8b18d3a0"},"kind":"ObjectSomeValuesFrom"}}
 {"uid":"0x1a1325dc","construct":{"sub_class_expression":{"uid":"0x1248506f"},"super_class_expression":{"uid":"0x9d4ad8bb"},"axiom_annotations":[],"kind":"SubClassOf"}}
 {"uid":"0xc4d7701a","construct":{"data_property_expressions":[{"uid":"0xca5342b3"},{"uid":"0x449db461"},{"uid":"0x8e3cd79e"}],"axiom_annotations":[],"kind":"DisjointDataProperties"}}
-{"uid":"0xabceb9c9","serialisation":"embedded","construct":{"object_property":{"uid":"0x99e5ca8d"},"kind":"ObjectInverseOf"}}
+{"uid":"0xabceb9c9","construct":{"object_property":{"uid":"0x99e5ca8d"},"kind":"ObjectInverseOf"}}
 {"uid":"0x1ab5fcfb","construct":{"object_property_expression":{"uid":"0xabceb9c9"},"class_expression":{"uid":"0xe726a894"},"kind":"ObjectSomeValuesFrom"}}
 {"uid":"0x5f9394e9","construct":{"cardinality":1,"object_property_expression":{"uid":"0x675312ed"},"class_expression":null,"kind":"ObjectMinCardinality"}}
 {"uid":"0xd9f03b6","construct":{"cardinality":1,"object_property_expression":{"uid":"0x230c12c3"},"class_expression":null,"kind":"ObjectExactCardinality"}}

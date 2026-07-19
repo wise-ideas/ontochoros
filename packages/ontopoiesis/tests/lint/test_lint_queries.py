@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ontoplexis import Edge, Graph, Node
-from ontoplexis.graph import build_projection
+import pytest
+from ontoplexis import Node, WritableProjection, derive_edges
 from ontoplexis.owlxml import role_for
 
 from ontopoiesis.lint import lint_dir
@@ -16,29 +16,65 @@ def _c(uid: str, kind: str, children: list[str] | None = None, **properties) -> 
     return (Node(uid=uid, kind=kind, properties=properties), children or [])
 
 
-def _graph(constructs: list[Construct]) -> Graph:
-    nodes = tuple(node for node, _ in constructs)
-    kind_by_uid = {node.uid: node.kind for node in nodes}
-    edges = []
+# One writable database for the whole module: creating a fresh embedded
+# database per test dominated the suite's runtime, so each test instead
+# clears N/E (which detaches D) and loads its handful of constructs.
+_PROJECTION: WritableProjection | None = None
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _shared_projection(tmp_path_factory: pytest.TempPathFactory):
+    global _PROJECTION
+    path = tmp_path_factory.mktemp("lint-queries") / "shared.lbug"
+    with WritableProjection.open(str(path)) as projection:
+        _PROJECTION = projection
+        yield
+    _PROJECTION = None
+
+
+def _cypher_value(value: object) -> str:
+    if isinstance(value, str):
+        escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+        return f"'{escaped}'"
+    return str(value)
+
+
+def _load(projection: WritableProjection, constructs: list[Construct], *, derive: bool) -> None:
+    projection.execute("MATCH (n:N) DETACH DELETE n")
+    kind_by_uid = {node.uid: node.kind for node, _ in constructs}
+    variable_by_uid = {node.uid: f"n{index}" for index, (node, _) in enumerate(constructs)}
+    # The whole fixture graph goes into one CREATE statement: per-statement
+    # overhead in the embedded engine, not data volume, is what dominates.
+    patterns = []
+    for node, _ in constructs:
+        properties = {"uid": node.uid, "kind": node.kind, **node.properties}
+        assignments = ", ".join(
+            f"{name}: {_cypher_value(value)}" for name, value in properties.items()
+        )
+        patterns.append(f"({variable_by_uid[node.uid]}:N {{{assignments}}})")
     for node, children in constructs:
         for index, child_uid in enumerate(children):
-            edges.append(
-                Edge(
-                    source=node.uid,
-                    target=child_uid,
-                    position=index,
-                    role=role_for(node.kind, kind_by_uid[child_uid], index),
-                )
+            role = role_for(node.kind, kind_by_uid[child_uid], index)
+            patterns.append(
+                f"({variable_by_uid[node.uid]})"
+                f"-[:E {{position: {index}, role: '{role}'}}]->"
+                f"({variable_by_uid[child_uid]})"
             )
-    return Graph(nodes=nodes, edges=tuple(edges))
+    if patterns:
+        projection.execute(f"CREATE {', '.join(patterns)}")
+    if derive:
+        derive_edges(projection)
 
 
 def _run_query(query_name: str, constructs: list[Construct]) -> list[dict[str, object]]:
     query_root = lint_dir().parent
     query_path = lint_dir() / query_name if "/" not in query_name else query_root / query_name
     query = query_path.read_text()
-    with build_projection(_graph(constructs)) as projection:
-        return projection.execute(query)
+    assert _PROJECTION is not None
+    # Rules that traverse the derived-edge cache need it rebuilt for this
+    # fixture; for everything else the ~1.4s derivation pass is pure waste.
+    _load(_PROJECTION, constructs, derive=":D" in query)
+    return _PROJECTION.execute(query)
 
 
 def test_negative_data_property_assertion_matches_equivalent_typed_literals() -> None:

@@ -39,6 +39,7 @@ Changelog = "https://github.com/wise-ideas/ontochoros/releases?q=ontoplexis"
 
 [dependency-groups]
 dev = [
+    "hypothesis",
     "pytest",
     "pytest-cov",
     "ruff",

@@ -32,7 +32,9 @@ check-ontoplexis: fetch-robot
 	uv run --directory packages/ontoplexis ty check
 	uv run --directory packages/ontoplexis pytest
 
-check-ontopoiesis:
+# fetch-robot: the convert/reason pipeline test skips silently without the
+# jar, so the narrow target must fetch it just like check-ontoplexis does.
+check-ontopoiesis: fetch-robot
 	uv run --directory packages/ontopoiesis ruff check .
 	uv run --directory packages/ontopoiesis ruff format --check .
 	uv run --directory packages/ontopoiesis ty check
@@ -46,7 +48,7 @@ test-ontophora:
 test-ontoplexis: fetch-robot
 	uv run --directory packages/ontoplexis pytest
 
-test-ontopoiesis:
+test-ontopoiesis: fetch-robot
 	uv run --directory packages/ontopoiesis pytest
 
 coverage: coverage-ontophora coverage-ontoplexis coverage-ontopoiesis
@@ -57,7 +59,7 @@ coverage-ontophora:
 coverage-ontoplexis: fetch-robot
 	uv run --directory packages/ontoplexis pytest --cov=ontoplexis --cov-report=term-missing --cov-report=html
 
-coverage-ontopoiesis:
+coverage-ontopoiesis: fetch-robot
 	uv run --directory packages/ontopoiesis pytest --cov=ontopoiesis --cov-report=term-missing --cov-report=html
 
 fetch-robot:

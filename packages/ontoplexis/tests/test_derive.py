@@ -210,3 +210,214 @@ def test_repeated_operands_do_not_duplicate_derived_edges() -> None:
         ("http://ex.org/o#A", "http://ex.org/o#B"),
         ("http://ex.org/o#B", "http://ex.org/o#A"),
     ]
+
+
+_FULL_RELATION_OWLXML = """<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" ontologyIRI="http://ex.org/r">
+    <Prefix name="" IRI="http://ex.org/r#"/>
+    <DisjointUnion>
+        <Class abbreviatedIRI=":Parent"/>
+        <Class abbreviatedIRI=":Left"/>
+        <Class abbreviatedIRI=":Right"/>
+    </DisjointUnion>
+    <SubObjectPropertyOf>
+        <ObjectProperty abbreviatedIRI=":hasDog"/><ObjectProperty abbreviatedIRI=":hasPet"/>
+    </SubObjectPropertyOf>
+    <SubDataPropertyOf>
+        <DataProperty abbreviatedIRI=":shoeSize"/><DataProperty abbreviatedIRI=":size"/>
+    </SubDataPropertyOf>
+    <SubAnnotationPropertyOf>
+        <AnnotationProperty abbreviatedIRI=":note"/><AnnotationProperty abbreviatedIRI=":remark"/>
+    </SubAnnotationPropertyOf>
+    <EquivalentObjectProperties>
+        <ObjectProperty abbreviatedIRI=":hasPet"/><ObjectProperty abbreviatedIRI=":keeps"/>
+    </EquivalentObjectProperties>
+    <DisjointDataProperties>
+        <DataProperty abbreviatedIRI=":size"/><DataProperty abbreviatedIRI=":age"/>
+    </DisjointDataProperties>
+    <InverseObjectProperties>
+        <ObjectProperty abbreviatedIRI=":hasPet"/><ObjectProperty abbreviatedIRI=":petOf"/>
+    </InverseObjectProperties>
+    <FunctionalObjectProperty><ObjectProperty abbreviatedIRI=":hasDog"/></FunctionalObjectProperty>
+    <FunctionalDataProperty><DataProperty abbreviatedIRI=":age"/></FunctionalDataProperty>
+    <InverseFunctionalObjectProperty>
+        <ObjectProperty abbreviatedIRI=":petOf"/>
+    </InverseFunctionalObjectProperty>
+    <ReflexiveObjectProperty><ObjectProperty abbreviatedIRI=":knows"/></ReflexiveObjectProperty>
+    <IrreflexiveObjectProperty><ObjectProperty abbreviatedIRI=":petOf"/></IrreflexiveObjectProperty>
+    <SymmetricObjectProperty><ObjectProperty abbreviatedIRI=":knows"/></SymmetricObjectProperty>
+    <AsymmetricObjectProperty><ObjectProperty abbreviatedIRI=":hasDog"/></AsymmetricObjectProperty>
+    <ObjectPropertyRange>
+        <ObjectProperty abbreviatedIRI=":hasPet"/><Class abbreviatedIRI=":Left"/>
+    </ObjectPropertyRange>
+    <DataPropertyRange>
+        <DataProperty abbreviatedIRI=":age"/>
+        <Datatype IRI="http://www.w3.org/2001/XMLSchema#integer"/>
+    </DataPropertyRange>
+    <ObjectPropertyAssertion>
+        <ObjectProperty abbreviatedIRI=":hasPet"/>
+        <NamedIndividual abbreviatedIRI=":alice"/>
+        <NamedIndividual abbreviatedIRI=":rex"/>
+    </ObjectPropertyAssertion>
+    <DataPropertyAssertion>
+        <DataProperty abbreviatedIRI=":age"/>
+        <NamedIndividual abbreviatedIRI=":alice"/>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">42</Literal>
+    </DataPropertyAssertion>
+    <SameIndividual>
+        <NamedIndividual abbreviatedIRI=":alice"/><NamedIndividual abbreviatedIRI=":al"/>
+    </SameIndividual>
+    <DifferentIndividuals>
+        <NamedIndividual abbreviatedIRI=":alice"/><NamedIndividual abbreviatedIRI=":rex"/>
+    </DifferentIndividuals>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2000/01/rdf-schema#seeAlso"/>
+        <IRI>http://ex.org/r#Left</IRI>
+        <IRI>http://ex.org/r#Right</IRI>
+    </AnnotationAssertion>
+    <SubClassOf>
+        <Class abbreviatedIRI=":Left"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty abbreviatedIRI=":hasPet"/><Class abbreviatedIRI=":Right"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class abbreviatedIRI=":Right"/>
+        <ObjectAllValuesFrom>
+            <ObjectProperty abbreviatedIRI=":hasDog"/><Class abbreviatedIRI=":Left"/>
+        </ObjectAllValuesFrom>
+    </SubClassOf>
+</Ontology>
+"""
+
+
+def _relation_pairs(relation: str) -> list[tuple[str, str]]:
+    with Ontology.from_owlxml(_FULL_RELATION_OWLXML).project() as p:
+        rows = p.execute(
+            "MATCH (a:N)-[:D {relation: $relation}]->(b:N) "
+            "RETURN a.iri AS a_iri, b.iri AS b_iri ORDER BY a_iri, b_iri",
+            parameters={"relation": relation},
+        )
+    return [(r["a_iri"], r["b_iri"]) for r in rows]
+
+
+def _r(name: str) -> str:
+    return f"http://ex.org/r#{name}"
+
+
+def test_disjoint_union_members_derive_subclass_and_disjointness() -> None:
+    assert _relation_pairs("subclass_of") == [
+        (_r("Left"), _r("Parent")),
+        (_r("Right"), _r("Parent")),
+    ]
+    assert _relation_pairs("disjoint_class") == [
+        (_r("Left"), _r("Right")),
+        (_r("Right"), _r("Left")),
+    ]
+
+
+def test_subproperty_edges_derive_for_all_three_property_families() -> None:
+    assert _relation_pairs("subproperty_of") == [
+        (_r("hasDog"), _r("hasPet")),
+        (_r("note"), _r("remark")),
+        (_r("shoeSize"), _r("size")),
+    ]
+
+
+def test_property_equivalence_disjointness_and_inversion_are_symmetric() -> None:
+    assert _relation_pairs("equivalent_property") == [
+        (_r("hasPet"), _r("keeps")),
+        (_r("keeps"), _r("hasPet")),
+    ]
+    assert _relation_pairs("disjoint_property") == [
+        (_r("age"), _r("size")),
+        (_r("size"), _r("age")),
+    ]
+    assert _relation_pairs("inverse_of") == [
+        (_r("hasPet"), _r("petOf")),
+        (_r("petOf"), _r("hasPet")),
+    ]
+
+
+def test_every_characteristic_axiom_derives_its_self_loop() -> None:
+    # FunctionalObjectProperty and FunctionalDataProperty share 'functional',
+    # mirroring the shared RDF vocabulary term.
+    assert _relation_pairs("functional") == [
+        (_r("age"), _r("age")),
+        (_r("hasDog"), _r("hasDog")),
+    ]
+    assert _relation_pairs("inverse_functional") == [(_r("petOf"), _r("petOf"))]
+    assert _relation_pairs("reflexive") == [(_r("knows"), _r("knows"))]
+    assert _relation_pairs("irreflexive") == [(_r("petOf"), _r("petOf"))]
+    assert _relation_pairs("symmetric") == [(_r("knows"), _r("knows"))]
+    assert _relation_pairs("asymmetric") == [(_r("hasDog"), _r("hasDog"))]
+
+
+def test_range_edges_derive_for_object_and_data_properties() -> None:
+    assert _relation_pairs("range") == [
+        (_r("age"), "http://www.w3.org/2001/XMLSchema#integer"),
+        (_r("hasPet"), _r("Left")),
+    ]
+
+
+def test_individual_assertions_derive_one_hop_edges() -> None:
+    with Ontology.from_owlxml(_FULL_RELATION_OWLXML).project() as p:
+        asserts = p.execute(
+            "MATCH (a:N)-[d:D {relation:'asserts'}]->(b:N) "
+            "RETURN a.iri AS a_iri, d.property AS property, b.iri AS b_iri"
+        )
+        values = p.execute(
+            "MATCH (a:N)-[d:D {relation:'data_value'}]->(v:N) "
+            "RETURN a.iri AS a_iri, d.property AS property, v.text AS text"
+        )
+    assert asserts == [{"a_iri": _r("alice"), "property": _r("hasPet"), "b_iri": _r("rex")}]
+    assert values == [{"a_iri": _r("alice"), "property": _r("age"), "text": "42"}]
+
+
+def test_individual_identity_axioms_derive_symmetric_edges() -> None:
+    assert _relation_pairs("same_as") == [
+        (_r("al"), _r("alice")),
+        (_r("alice"), _r("al")),
+    ]
+    assert _relation_pairs("different_from") == [
+        (_r("alice"), _r("rex")),
+        (_r("rex"), _r("alice")),
+    ]
+
+
+def test_iri_valued_annotations_derive_entity_to_entity_edges() -> None:
+    with Ontology.from_owlxml(_FULL_RELATION_OWLXML).project() as p:
+        rows = p.execute(
+            "MATCH (a:N)-[d:D {relation:'annotation'}]->(b:N) "
+            "RETURN a.iri AS a_iri, d.property AS property, b.iri AS b_iri"
+        )
+    assert rows == [
+        {
+            "a_iri": _r("Left"),
+            "property": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+            "b_iri": _r("Right"),
+        }
+    ]
+
+
+def test_existential_and_universal_restrictions_derive_quantified_edges() -> None:
+    with Ontology.from_owlxml(_FULL_RELATION_OWLXML).project() as p:
+        rows = p.execute(
+            "MATCH (a:N)-[d:D {relation:'restriction'}]->(b:N) "
+            "RETURN a.iri AS a_iri, d.property AS property, d.quantifier AS quantifier, "
+            "b.iri AS b_iri ORDER BY a_iri"
+        )
+    assert rows == [
+        {
+            "a_iri": _r("Left"),
+            "property": _r("hasPet"),
+            "quantifier": "some",
+            "b_iri": _r("Right"),
+        },
+        {
+            "a_iri": _r("Right"),
+            "property": _r("hasDog"),
+            "quantifier": "only",
+            "b_iri": _r("Left"),
+        },
+    ]

@@ -31,6 +31,14 @@ jobs:
         with:
           path: packages/ontoplexis/.cache/robot
           key: robot-1.9.10
+      # Memoized oracle conversions (see ontoplexis tests/oracle.py). Entries
+      # are keyed by request content and jar digest, so a stale restore is
+      # only ever unused bytes — the hashFiles key just bounds cache churn.
+      - uses: actions/cache@v4
+        with:
+          path: packages/ontoplexis/.cache/oracle
+          key: oracle-robot-1.9.10-${{ hashFiles('packages/ontoplexis/src/**', 'packages/ontoplexis/tests/fixtures/**', 'packages/ontophora/tests/fixtures/cases/*.xml') }}
+          restore-keys: oracle-robot-1.9.10-
       - run: make sync
       - run: make check
 
