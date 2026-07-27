@@ -16,6 +16,7 @@ from ontopoiesis.commands.migrate import migrate
 from ontopoiesis.commands.query import query
 from ontopoiesis.commands.reason import reason
 from ontopoiesis.commands.render_command import render
+from ontopoiesis.commands.resolve import resolve
 from ontopoiesis.commands.test import test
 from ontopoiesis.errors import translate_cli_errors
 
@@ -60,6 +61,7 @@ def main(
 
 app.command()(build)
 app.command()(convert)
+app.command()(resolve)
 app.command()(reason)
 app.command()(diff)
 app.command()(export)

@@ -172,7 +172,7 @@ include:
 can query the declarations directly:
 
 ```cypher
-MATCH (n:N {kind: 'Import'}) RETURN n.iri AS imported_iri ORDER BY imported_iri
+MATCH (n:N {kind: 'Import'}) RETURN n.text AS imported_iri ORDER BY imported_iri
 ```
 
 What Ontopoiesis does **not** do during `build` is fetch or merge the imported ontology
@@ -184,9 +184,15 @@ closure.
 This matters most for checks that depend on declaration or annotation completeness. An
 import-heavy ontology can produce projection-level findings such as "missing label" or
 "undeclared entity" when the owning vocabulary lives in an imported module. Treat those
-as source-document findings unless you first merge the import closure into one OWL
-document before building.
+as source-document findings unless you first resolve the import closure:
 
-If reasoning or import resolution is required, do it with an external tool and build from
-the resulting OWL/XML document. Reasoning against an incomplete import closure would make
-the result misleading.
+```bash
+ontopoiesis resolve ontology.owl --catalog catalog-v001.xml -o ontology.closure.owx
+ontopoiesis build ontology.closure.owx -o ontology.lbug
+```
+
+`resolve` uses a user-provided ROBOT jar to recursively load and collapse the
+closure into one OWL/XML document. An XML catalog is optional but recommended
+for reproducible offline resolution. Reasoning against an incomplete import
+closure would make the result misleading, so resolve before `reason` when both
+operations are needed.

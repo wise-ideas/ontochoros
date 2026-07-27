@@ -142,8 +142,8 @@ ontopoiesis query graph.lbug -q "MATCH (n:N) WHERE n.iri = '<your-iri>' RETURN n
 ```
 
 If no row is returned, the entity is not in this projection. If the entity lives in an
-imported ontology, merge the import closure into the source document before building
-the projection.
+imported ontology, run `ontopoiesis resolve` on the source document before building the
+projection.
 
 **Upstream includes the `Ontology` root.** This is expected. Entities used in ontology
 content are transitively reachable from the `Ontology` node that contains their axioms.

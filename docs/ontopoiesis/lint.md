@@ -69,6 +69,18 @@ violation rows those rules returned. The current CLI surface does not expose sep
 verbosity or fail-fast flags; the selector and profile options above are the supported
 way to control what the command runs.
 
+If the projection contains `Import` nodes, lint prints one warning that its import
+closure is unresolved. This warning does not change rule severities or the exit code:
+the rules still report exactly what is present in the projection, but
+closure-sensitive findings may be false positives. Resolve the source document and
+build the resulting closure before treating those findings as ontology-wide defects:
+
+```bash
+ontopoiesis resolve ontology.owl --catalog catalog-v001.xml
+ontopoiesis build ontology.closure.owx
+ontopoiesis lint ontology.closure.lbug --profile description_logic
+```
+
 ## Output
 
 ### Passing run
@@ -150,8 +162,9 @@ If that passes locally, check whether the CI step enabled extra profiles or sele
 **A projection-level finding looks wrong.** The projection contains only constructs
 stated in the source document. Imported ontology content is not merged during `build`,
 so findings about missing labels or undeclared entities can be artifacts of an
-incomplete import closure. See
-[The Projection Graph Model](cypher-model.md#import-handling).
+incomplete import closure. Lint warns when the projection contains unresolved import
+declarations; use `ontopoiesis resolve` on the source document before `build` to check
+the full closure. See [The Projection Graph Model](cypher-model.md#import-handling).
 
 **`--profile` has no effect.** Profile names must match exactly:
 `editorial`, `modeling_risk`, or `description_logic`. Typos do not silently fall back;

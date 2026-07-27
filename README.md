@@ -40,6 +40,9 @@ of them. Non-goals, stated up front:
   externally — `ontopoiesis reason` wraps `robot reason` (ELK/HermiT) behind
   an opt-in, user-provided jar — and build the output; inferred axioms then
   behave like any other told structure.
+- **Import resolution.** `ontopoiesis resolve` wraps `robot merge` behind the
+  same optional jar boundary and produces a closure-complete OWL/XML document
+  for `build`; XML catalogs keep resolution reproducible and offline.
 - **Instance-data (ABox) validation.** For SHACL over RDF data graphs, use
   pyshacl. The Cypher lint/test system here validates ontology *structure*.
 - **Non-OWL/XML formats.** OWL/XML is the only document format the toolchain
@@ -48,12 +51,14 @@ of them. Non-goals, stated up front:
 - **A hosted service.** These are libraries and a CLI, meant as components in
   a pipeline.
 
-Running the bundled lint baseline against production ontologies surfaces real
-defects — FoaF, the SNOMED CT standard ontology, and the Human Phenotype
-Ontology among them — that off-the-shelf reasoners and reports miss. See
-[Why Ontochoros](https://wise-ideas.github.io/ontochoros/why/) for the argument
-and the [case studies](https://wise-ideas.github.io/ontochoros/ontopoiesis/case-studies/)
-for each finding reproduced command by command.
+The case studies apply targeted lint rules and case-specific Cypher analysis
+to versioned public ontology artifacts, separating demonstrated
+scientific-model defects, modeling risks, and policy-backed findings from
+compatibility facts and clean controls. They also state where ROBOT provides
+the same check. See
+[Why Ontochoros](https://wise-ideas.github.io/ontochoros/why/) and the
+[case studies](https://wise-ideas.github.io/ontochoros/ontopoiesis/case-studies/)
+for the evidence and reproduction commands.
 
 ## Stability
 

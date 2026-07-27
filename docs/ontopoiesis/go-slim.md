@@ -219,9 +219,10 @@ WARN warn_ontology_no_metadata_annotations.cypher
 ╰─────────────────╯
 ```
 
-40 entities in the slim do not have `rdfs:label` — these are predominantly imported
-terms whose labels live in the parent ontology. 33 labeled terms lack a definition
-(`IAO:0000115`). These are editorial warnings, not errors: the baseline remains clean.
+40 entities in the slim do not have `rdfs:label` — these are predominantly
+external terms whose labels live in the parent ontology but are not copied into
+the slim document. 33 labeled terms lack a definition (`IAO:0000115`). These are
+editorial warnings, not errors: the baseline remains clean.
 
 ## 7. Impact analysis
 
@@ -265,15 +266,14 @@ through a browser or alternate tool and save it as `goslim_generic.owl` before
 proceeding. The OBO Foundry also mirrors the file at the same PURL.
 
 **`ontopoiesis build goslim_generic.owlxml` fails.** Confirm that the ROBOT conversion
-completed and that the input is OWL/XML. The GO slim declares `owl:imports` to the Relations
-Ontology (RO) and Basic Formal Ontology (BFO), but `ontopoiesis build` records those
-declarations without resolving them.
+completed and that the input is OWL/XML.
 
 **Query results include fewer terms than expected.** The projection covers only the GO
-slim's directly stated axioms. GO terms whose labels and definitions live in the full GO
-release (imported via `owl:imports`) appear in the projection as entity nodes without
-annotation assertions. Merge imported content into the source document before building,
-or accept that editorial lint rules flag those terms as missing labels.
+slim's stated axioms. The release references some external terms without copying
+their labels and definitions into the slim document, and it does not declare formal
+imports that `resolve` could follow. Use the full GO release when those annotations
+are required, or accept that editorial lint rules flag the references as missing
+labels.
 
 ## Scale note
 

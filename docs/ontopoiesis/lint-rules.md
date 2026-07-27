@@ -219,8 +219,10 @@ Without labels, entities are identified only by IRI in human-facing tools.
 
 **`P102` `warn_duplicate_label_language`**
 
-Multiple `rdfs:label` annotations in the same language on the same entity. Usually a
-duplicate or accidental re-assertion rather than an intentional multilingual annotation.
+Multiple `rdfs:label` annotations in the same language on the same entity.
+The values may be identical or different. This is legal and can be intentional,
+but consumers that select one display label per language need an explicit
+selection policy.
 
 ```cypher
 --8<-- "packages/ontopoiesis/src/ontopoiesis/lint/lint_profiles/editorial/warn_duplicate_label_language.cypher"
@@ -345,9 +347,11 @@ no classifiable information.
 
 **`M107` `warn_property_dangerous_combination`**
 
-Object properties combining `Transitive` with `Functional` or `InverseFunctional`.
-Transitivity collapses entire chains to a single filler, making a functional property
-over a transitive chain almost always unsatisfiable or unexpectedly restrictive.
+Object properties combining `Transitive` with `Functional` or
+`InverseFunctional`, or combining `Functional` with `InverseFunctional`.
+The first two combinations can collapse nodes along a transitive chain. The
+third makes the asserted relation one-to-one among participating individuals.
+All are legal OWL and may be deliberate, so this is a modeling-risk warning.
 
 ```cypher
 --8<-- "packages/ontopoiesis/src/ontopoiesis/lint/lint_profiles/modeling_risk/warn_property_dangerous_combination.cypher"
@@ -378,16 +382,19 @@ accessed through annotation traversal.
 ### `description_logic` (`D...`)
 
 Checks that are useful when you specifically want a stricter OWL 2 DL-oriented
-surface.
+surface. These are targeted structural rules, not a complete OWL 2 DL profile
+validator. Use
+[`robot validate-profile --profile DL`](https://robot.obolibrary.org/validate-profile.html)
+when you need a conformance result for the whole imports closure.
 
 **`D101` `test_undeclared_entities`**
 
 Named entities (other than built-in OWL 2 IRIs) used in axioms without a corresponding
-`Declaration` axiom. OWL 2 DL requires all named entities to be explicitly declared;
-undeclared use is a syntactic violation that some parsers silently accept. In Ontopoiesis's
-current source-document projection model, this rule reports declarations missing from
-the built projection. If the entity belongs to an imported ontology that was not merged
-before build, treat the result as closure-dependent rather than as a confirmed
+`Declaration` axiom. OWL 2 DL requires classes, datatypes, and object, data, and
+annotation properties to be declared in the axiom closure; named individuals may be
+used without declarations and are not checked by this rule. In a source-document
+projection, an imported declaration may be absent. Lint warns when unresolved imports
+remain; resolve the source document before `build` before treating `D101` as an
 ontology-wide defect.
 
 ```cypher
@@ -419,6 +426,12 @@ conformant reasoners.
 An IRI used simultaneously as both an `ObjectProperty` and a `DataProperty`. These
 roles are disjoint in OWL 2; a property cannot relate individuals to individuals and
 individuals to literals at the same time.
+
+For example, the FoaF vocabulary declares six identifier properties as both
+datatype and inverse-functional properties. `D104` reports the resulting
+object/data property use. FoaF does not claim OWL 2 DL conformance, so this is
+compatibility information for consumers requiring that profile—not an ontology
+defect. ROBOT's explicit DL profile validator detects it as well.
 
 ```cypher
 --8<-- "packages/ontopoiesis/src/ontopoiesis/lint/lint_profiles/description_logic/test_punning_object_data_property.cypher"

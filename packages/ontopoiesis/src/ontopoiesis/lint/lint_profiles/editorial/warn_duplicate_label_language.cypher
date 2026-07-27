@@ -1,7 +1,6 @@
-// Multiple rdfs:label annotations in the same language on the same entity. OWL allows
-// this, but applications can only display one label per language, and the choice is
-// arbitrary. In practice this almost always indicates a copy-paste duplicate or an
-// accidental re-assertion after an edit.
+// Multiple rdfs:label annotations in the same language on the same entity. Values may
+// be identical or different. OWL allows this, but consumers that select one display
+// label per language need an explicit selection policy.
 MATCH
   (ax:N {kind: 'AnnotationAssertion'})
     -[:E {role: 'property'}]->(:N {iri: 'http://www.w3.org/2000/01/rdf-schema#label'}),

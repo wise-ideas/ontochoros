@@ -43,6 +43,15 @@ def lint(
         rules=rules,
     )
 
+    if results.unresolved_import_count:
+        print_notice(
+            "WARN import closure is unresolved: "
+            f"the projection contains {results.unresolved_import_count} Import declaration(s). "
+            "Closure-sensitive findings may be false positives; run `ontopoiesis resolve` "
+            "on the source document before `build`.",
+            err=True,
+        )
+
     for violation in results.failures:
         print_notice(f"FAIL {violation.path.name}", err=True)
         print_violation_rows(violation.rows, err=True)

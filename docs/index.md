@@ -17,9 +17,10 @@ ontopoiesis export pizza.lbug               # losslessly back to OWL/XML
 
 Everything is pure Python: no JVM, no server, no specialized ontology API.
 If you can write a graph query, you can interrogate, test, and author an
-ontology. Run against widely used vocabularies — FoaF, the SNOMED CT
-ontology, the Human Phenotype Ontology — the stock lint rules surface
-structural defects in the released files that standard reports do not flag.
+ontology. Run against public artifacts including SWEET, the SNOMED CT
+research ontology SCTO, UBERON, and the Human Phenotype Ontology, stock rules
+and case-specific queries provide repeatable structural checks while making
+their scope and overlap with existing tools explicit.
 [Why this exists, and the evidence →](why.md)
 
 ## One graph, one query language
@@ -67,9 +68,10 @@ Three packages form one stack. Most people only need the CLI.
 - New here? Read [why Ontochoros exists](why.md), then run the
   [Ontopoiesis quickstart](ontopoiesis/quickstart.md) — it builds, queries,
   lints, and diffs bundled sample ontologies in about ten minutes.
-- To see the lint findings first: the
-  [case studies](ontopoiesis/case-studies.md) audit ten production ontologies
-  and show every command.
+- To see the findings first: the
+  [case studies](ontopoiesis/case-studies.md) audit versioned public ontology
+  artifacts with stock lint rules and case-specific queries, and show every
+  command.
 - Embedding the graph in your own application? Start with the
   [Ontoplexis quickstart](ontoplexis/quickstart.md).
 - Exchanging typed construct records between systems? See the

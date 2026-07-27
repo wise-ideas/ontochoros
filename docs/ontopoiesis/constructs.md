@@ -228,12 +228,13 @@ which connects the entity node directly to the literal.
 
 ### Ontology and document nodes
 
-| Property       | Applies to         | Description                          |
-| -------------- | ------------------ | ------------------------------------ |
-| `ontology_iri` | `Ontology`         | The ontology IRI                     |
-| `version_iri`  | `Ontology`         | The version IRI (may be null)        |
-| `iri`          | `Import`, `Prefix` | Imported IRI or prefix namespace IRI |
-| `prefix_name`  | `Prefix`           | Prefix name (e.g., `"owl"`, `"rdf"`) |
+| Property       | Applies to | Description                          |
+| -------------- | ---------- | ------------------------------------ |
+| `ontology_iri` | `Ontology` | The ontology IRI                     |
+| `version_iri`  | `Ontology` | The version IRI (may be null)        |
+| `text`         | `Import`   | Imported document IRI                |
+| `iri`          | `Prefix`   | Prefix namespace IRI                 |
+| `prefix_name`  | `Prefix`   | Prefix name (e.g., `"owl"`, `"rdf"`) |
 
 ### Edges
 
@@ -358,10 +359,10 @@ structural specification. Ontopoiesis does not represent them. If an ontology do
 contains SWRL rules, they are not represented in the projection.
 
 **Import resolution.** `owl:imports` declarations are faithfully captured as `Import`
-nodes, but `ontopoiesis build` does not fetch imported ontologies or merge their constructs
-into the projection. Ontopoiesis also does not yet provide a graph-native import model that
-preserves imported ontologies as distinct structural units with explicit cross-document
-semantics inside one projection.
+nodes, but `ontopoiesis build` does not perform network or catalog resolution. Run
+`ontopoiesis resolve` first to collapse the import closure into one OWL/XML document, then
+build that document. Ontopoiesis does not provide a graph-native import model that preserves
+imported ontologies as distinct structural units inside one projection.
 
 **OWL Full.** The OWL 2 structural specification — and therefore Ontopoiesis — does not cover
 the RDF-level semantics of OWL Full. Constructs that exist only under OWL Full's RDF

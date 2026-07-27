@@ -27,6 +27,7 @@ class LintResults:
     """Structured results from running a set of Cypher lint rules."""
 
     violations: list[LintViolation] = field(default_factory=list)
+    unresolved_import_count: int = 0
 
     @property
     def failures(self) -> list[LintViolation]:
@@ -47,8 +48,19 @@ def run_lint_on_path(
         raise ValueError(f"Lint requires a .lbug projection, got {input_path}.")
     violations: list[LintViolation] = []
     with Projection.open(input_path) as projection:
+        (import_row,) = projection.execute("MATCH (n:N {kind: 'Import'}) RETURN count(n) AS count")
+        unresolved_import_count = import_row.get("count")
+        if not isinstance(unresolved_import_count, int) or isinstance(
+            unresolved_import_count, bool
+        ):
+            raise ValueError(
+                f"Import count query returned non-integer {unresolved_import_count!r}."
+            )
         for rule in rules:
             rows = rule.evaluate(projection)
             if rows:
                 violations.append(LintViolation(path=rule.path, rows=rows, is_warn=rule.is_warn))
-    return LintResults(violations=violations)
+    return LintResults(
+        violations=violations,
+        unresolved_import_count=unresolved_import_count,
+    )

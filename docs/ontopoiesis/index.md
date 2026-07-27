@@ -21,9 +21,10 @@ ontopoiesis export pizza.lbug               # projection → OWL/XML
 Every command reads the same projection, so you parse the source ontology
 once and interrogate it as often as you like — locally or in CI. Quality
 gates are plain `.cypher` files that fail when they return rows, which means
-your team extends the rule set the way it writes dbt tests. On real
-ontologies the bundled baseline alone finds shipping defects; the
-[case studies](case-studies.md) reproduce them command by command, and
+your team extends the rule set the way it writes dbt tests. The
+[case studies](case-studies.md) apply targeted rules and case-specific
+queries to versioned public ontology artifacts, state what each result does
+and does not establish, and reproduce them command by command.
 [Why Ontochoros](../why.md) explains the approach.
 
 Ontopoiesis parses OWL/XML only, matching Ontoplexis. Other serializations

@@ -60,6 +60,8 @@ def test_run_lint_on_path_executes_rules_against_opened_runtime(
             return None
 
         def execute(self, query: str, parameters=None) -> list[dict[str, object]]:
+            if "count(n) AS count" in query:
+                return [{"count": 0}]
             return [{"uid": "0x1"}]
 
     monkeypatch.setattr(

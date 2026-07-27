@@ -788,6 +788,19 @@ def test_undeclared_entities_reports_missing_declaration_and_user_datatype() -> 
     ]
 
 
+def test_undeclared_entities_allows_undeclared_named_individual() -> None:
+    constructs = [
+        _c("0x1", "Class", iri="https://example.org#Person"),
+        _c("0x2", "NamedIndividual", iri="https://example.org#Alice"),
+        _c("0x3", "Declaration", ["0x1"]),
+        _c("0x4", "ClassAssertion", ["0x1", "0x2"]),
+    ]
+
+    rows = _run_query("lint_profiles/description_logic/test_undeclared_entities.cypher", constructs)
+
+    assert rows == []
+
+
 def test_warn_datatype_property_no_domain_reports_missing_domain() -> None:
     constructs = [_c("0x1", "DataProperty", iri="https://example.org#age")]
 

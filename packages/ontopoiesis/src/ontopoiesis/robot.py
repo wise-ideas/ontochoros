@@ -1,10 +1,11 @@
-"""Optional ROBOT shim: format conversion and reasoner materialization.
+"""Optional ROBOT shim: conversion, import resolution, and reasoning.
 
 ROBOT (the OBO community's OWLAPI CLI) stays an **external, opt-in** tool: it
 is never bundled, never a hard dependency, and never touches ontoplexis. The
 shim shells out to a user-provided jar, discovered through the ``ROBOT_JAR``
 environment variable (dotenv-loaded, so a project ``.env`` works), and adds a
-JVM requirement only on the commands that use it (``convert``, ``reason``).
+JVM requirement only on the commands that use it (``convert``, ``resolve``,
+``reason``).
 
 Reasoning stays outside the graph: ``reason`` materializes inferred axioms
 into a *new OWL/XML document* via the chosen reasoner. Once built, inferred
@@ -61,6 +62,31 @@ def convert_to_owlxml(input_path: Path, output_path: Path) -> None:
     (``.ttl``, ``.owl``, ``.ofn``, ``.omn``, ``.obo``, ``.json``, …).
     """
     _run("convert", "--input", str(input_path), "--format", "owx", "--output", str(output_path))
+
+
+def resolve_imports_to_owlxml(
+    input_path: Path,
+    output_path: Path,
+    *,
+    catalog: Path | None = None,
+) -> None:
+    """Merge an ontology's transitive import closure into one OWL/XML document.
+
+    ROBOT/OWLAPI owns document retrieval, redirects, parsing, cycles, and XML
+    catalog resolution. The collapsed document contains the closure's axioms
+    and no longer carries the resolved ``owl:imports`` declarations.
+    """
+    args = [
+        "merge",
+        "--input",
+        str(input_path),
+        "--collapse-import-closure",
+        "true",
+    ]
+    if catalog is not None:
+        args.extend(("--catalog", str(catalog)))
+    args.extend(("--output", str(output_path)))
+    _run(*args)
 
 
 def reason_to_owlxml(
@@ -126,4 +152,5 @@ __all__ = [
     "convert_to_owlxml",
     "discover_jar",
     "reason_to_owlxml",
+    "resolve_imports_to_owlxml",
 ]

@@ -2,7 +2,9 @@
 // unintended consequences under reasoning:
 //   Transitive + Functional: collapses the entire forward chain to a single target value.
 //   Transitive + InverseFunctional: collapses the entire backward chain to a single source.
-//   Functional + InverseFunctional: implies a bijection between domain and range instances.
+//   Functional + InverseFunctional: makes the asserted relation one-to-one among
+//   participating individuals; it does not require every domain/range individual to
+//   participate.
 MATCH (p:N {kind: 'ObjectProperty'})
 WHERE p.iri IS NOT NULL
   AND EXISTS {

@@ -19,7 +19,8 @@ ontopoiesis build after.owlxml -o after.lbug
 ```
 
 Both projections should be built from comparable source documents. `ontopoiesis build` records
-`owl:imports` declarations but does not fetch or merge imported ontology content.
+`owl:imports` declarations but does not resolve them. If the comparison should cover
+imported constructs, run `ontopoiesis resolve` on both source documents before building.
 
 ## Usage
 
@@ -115,7 +116,7 @@ them in the OWL/XML source before you build the projections.
 
 Import declarations are included in the diff as `Ontology`-level node properties.
 Constructs that enter an ontology via `owl:imports` are not included unless the
-import closure has already been merged into the source document before build.
+import closure has been resolved before build.
 
 ## Troubleshooting
 

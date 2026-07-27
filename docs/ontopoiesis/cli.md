@@ -35,8 +35,8 @@ ontopoiesis build ontology.owlxml -o graph.lbug
 
 `owl:imports` declarations in the source document are recorded as `Import` nodes in the
 projection. The projection contains only the axioms stated in the source document
-itself; Ontopoiesis does not resolve imports during `build`. See
-[The Projection Graph Model](cypher-model.md#what-is-not-in-the-projection) for details.
+itself; use `resolve` before `build` when queries or checks require the full import
+closure. See [The Projection Graph Model](cypher-model.md#import-handling) for details.
 
 | Option           | Argument | Default                          | Description                        |
 | ---------------- | -------- | -------------------------------- | ---------------------------------- |
@@ -63,6 +63,47 @@ are reported verbatim — conversion can fail for RDF that is not valid OWL 2.
 | ---------------- | -------- | ------------------------------- | ---------------------------- |
 | `--output`, `-o` | `PATH`   | `input_path` with `.owx` suffix | Output OWL/XML path          |
 | `--force`        | none     | off                             | Overwrite an existing output |
+
+### `resolve`
+
+Resolve an ontology's transitive import closure and merge it into one OWL/XML
+document via [ROBOT](https://robot.obolibrary.org/merge.html). Build the
+resulting document when lint, querying, rendering, or impact analysis must see
+constructs supplied by imported ontologies.
+
+```bash
+export ROBOT_JAR=/path/to/robot.jar
+ontopoiesis resolve ontology.owl -o ontology.closure.owx
+ontopoiesis build ontology.closure.owx -o ontology.lbug
+```
+
+Import IRIs can move, disappear, or resolve differently over time. For
+repeatable local and CI builds, map them to pinned local documents with an XML
+catalog:
+
+```bash
+ontopoiesis resolve ontology.owl \
+  --catalog catalog-v001.xml \
+  -o ontology.closure.owx
+```
+
+The resolved document contains the axioms from the import closure and no longer
+contains the collapsed `owl:imports` declarations. ROBOT reports retrieval,
+catalog, parsing, and unresolved-import failures verbatim. Like `convert` and
+`reason`, `resolve` is an opt-in JVM workflow over a user-provided ROBOT jar;
+neither the jar nor a JVM is a runtime dependency of the rest of Ontopoiesis.
+
+This distinction is observable in the bundled Dublin Core example. Linting its
+source-document projection with `D101` reports five Dublin Core Terms annotation
+properties whose declarations are absent locally. Resolving its two imports before
+building supplies all five declarations, and `D101` passes. That is why Dublin Core
+is an import-resolution example rather than a case-study violation.
+
+| Option           | Argument | Default                                 | Description                         |
+| ---------------- | -------- | --------------------------------------- | ----------------------------------- |
+| `--output`, `-o` | `PATH`   | `input_path` with `.closure.owx` suffix | Resolved OWL/XML output path        |
+| `--catalog`      | `PATH`   | none                                    | XML catalog for import IRI mappings |
+| `--force`        | none     | off                                     | Overwrite an existing output        |
 
 ### `reason`
 

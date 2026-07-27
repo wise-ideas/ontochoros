@@ -17,6 +17,7 @@ from ontopoiesis.robot import (
     RobotCommandError,
     RobotUnavailableError,
     convert_to_owlxml,
+    resolve_imports_to_owlxml,
 )
 
 
@@ -93,3 +94,37 @@ def test_nonzero_exit_without_output_falls_back_to_a_generic_message(
 
     with pytest.raises(RobotCommandError, match="ROBOT convert failed."):
         _convert(tmp_path)
+
+
+def test_resolve_imports_passes_explicit_closure_and_catalog_arguments(
+    fake_jar: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+
+    def succeed(cmd, **kwargs):
+        seen.extend(cmd)
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("ontopoiesis.robot.subprocess.run", succeed)
+    catalog = tmp_path / "catalog.xml"
+
+    resolve_imports_to_owlxml(
+        tmp_path / "root.owl",
+        tmp_path / "root.closure.owx",
+        catalog=catalog,
+    )
+
+    assert seen == [
+        "java",
+        "-jar",
+        str(fake_jar),
+        "merge",
+        "--input",
+        str(tmp_path / "root.owl"),
+        "--collapse-import-closure",
+        "true",
+        "--catalog",
+        str(catalog),
+        "--output",
+        str(tmp_path / "root.closure.owx"),
+    ]

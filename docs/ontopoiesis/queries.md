@@ -397,7 +397,7 @@ Import declarations recorded in the projection:
 
 ```cypher
 MATCH (n:N {kind: 'Import'})
-RETURN n.iri AS imported_iri
+RETURN n.text AS imported_iri
 ORDER BY imported_iri
 ```
 

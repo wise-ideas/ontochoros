@@ -355,6 +355,19 @@ def test_lint_cli_surfaces_selection_errors_as_bad_parameters(
     assert "Unknown lint selector" in result.output
 
 
+def test_lint_cli_warns_when_projection_contains_unresolved_imports(
+    runner: CliRunner, tmp_path: Path, write_lbug: WriteLbug
+) -> None:
+    input_path = write_lbug(tmp_path / "importing.lbug", _IMPORTING_OWX)
+
+    result = _invoke(runner, "lint", str(input_path), "--select", "D101")
+
+    assert result.exit_code == 1
+    assert "WARN import closure is unresolved" in result.output
+    assert "contains 1 Import declaration" in result.output
+    assert "ontopoiesis resolve" in result.output
+
+
 # ---------------------------------------------------------------------------
 # migrate
 # ---------------------------------------------------------------------------
@@ -600,7 +613,7 @@ def test_storage_backend_is_never_imported_directly() -> None:
 
 
 # ---------------------------------------------------------------------------
-# convert / reason (the opt-in ROBOT shim)
+# convert / resolve / reason (the opt-in ROBOT shim)
 # ---------------------------------------------------------------------------
 
 _ROBOT_JAR = Path(__file__).resolve().parents[2] / "ontoplexis" / ".cache" / "robot" / "robot.jar"
@@ -620,6 +633,27 @@ _MINI_TTL = """\
 :C rdf:type owl:Class .
 :A rdfs:subClassOf :B .
 :B rdfs:subClassOf :C .
+"""
+
+_IMPORTING_OWX = """\
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+          ontologyIRI="https://example.org/root">
+  <Import>https://example.org/imported</Import>
+  <Declaration><Class IRI="https://example.org/root#A"/></Declaration>
+  <SubClassOf>
+    <Class IRI="https://example.org/root#A"/>
+    <Class IRI="https://example.org/imported#B"/>
+  </SubClassOf>
+</Ontology>
+"""
+
+_IMPORTED_OWX = """\
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+          ontologyIRI="https://example.org/imported">
+  <Declaration><Class IRI="https://example.org/imported#B"/></Declaration>
+</Ontology>
 """
 
 
@@ -661,6 +695,57 @@ def test_convert_cli_rejects_existing_output_before_needing_the_jar(
 
     assert result.exit_code != 0
     assert "--force" in result.output
+
+
+def test_resolve_cli_rejects_existing_output_before_needing_the_jar(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("ROBOT_JAR", raising=False)
+    source = tmp_path / "root.owx"
+    source.write_text(_IMPORTING_OWX, encoding="utf-8")
+    (tmp_path / "root.closure.owx").write_text("occupied", encoding="utf-8")
+
+    result = _invoke(runner, "resolve", str(source))
+
+    assert result.exit_code != 0
+    assert "--force" in result.output
+
+
+@_needs_robot
+def test_resolve_build_lint_pipeline_uses_catalogued_import_closure(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ROBOT_JAR", str(_ROBOT_JAR))
+    source = tmp_path / "root.owx"
+    imported = tmp_path / "imported.owx"
+    catalog = tmp_path / "catalog.xml"
+    source.write_text(_IMPORTING_OWX, encoding="utf-8")
+    imported.write_text(_IMPORTED_OWX, encoding="utf-8")
+    catalog.write_text(
+        '<?xml version="1.0"?>\n'
+        '<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">\n'
+        f'  <uri name="https://example.org/imported" uri="{imported.as_uri()}"/>\n'
+        "</catalog>\n",
+        encoding="utf-8",
+    )
+
+    resolved = _invoke(runner, "resolve", str(source), "--catalog", str(catalog))
+
+    assert resolved.exit_code == 0
+    closure = tmp_path / "root.closure.owx"
+    document = closure.read_text(encoding="utf-8")
+    assert "https://example.org/imported#B" in document
+    assert "<Import>" not in document
+    assert _invoke(runner, "build", str(closure)).exit_code == 0
+    linted = _invoke(
+        runner,
+        "lint",
+        str(tmp_path / "root.closure.lbug"),
+        "--select",
+        "D101",
+    )
+    assert linted.exit_code == 0
+    assert "No lint violations found." in linted.output
 
 
 @_needs_robot
